@@ -9,6 +9,7 @@ Briefly, in a full factoral experiment treating Brassica rapa plants grown in gr
 ## Contents
 
 **analyses**
+
 BrassicaRpfRCode.Rmd: All anaylses of plant fitness and productivity testing the effects of Rpf treatment. 
 
 MothurTools.R: R code of workflow pipeline for mothur output files. Done by Mario Muscarella. 
@@ -22,6 +23,7 @@ CommunityComposition.Rmd: R code of workflow pipeline to generate soil community
 Figure 1.Rmd: Cleaned code to generate figure 1 of the manuscript describing the effect of Rpf treatment on Brassica plants in live soil. 
 
 **data**
+
 qPCR.csv : Bacterial 16S rRNA and fungal ITS gene copy abundance data from quantitative PCR analysis. 
 
 GCH_CO2.csv : Soil CO2 respiration data from soil. 
@@ -32,16 +34,19 @@ Plant Fitness.csv : Plant measurements of flower count, specific leaf area, seed
 Not added yet
 
 **mothur**
+
 code folder contains mothur Batch scripts and shell scripts for running pipeline in mason.
 
 output folder contains shared and summary files from mothur pipeline output. 
 
 **raw data**
+
 growth chamber raw data folder contains all raw data of plant measurements taken by Peyton.
 
 respiration raw data folder contains raw txt file reads of CO2  soil respiration. 
 
 ## Software used and versions
+
 R Programing v3.3.0
 
 mothur/1.36.1
