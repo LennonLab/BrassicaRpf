@@ -1,0 +1,67 @@
+# Accessing Mason
+> ssh vkuo@mason.indiana.edu
+
+# Navigate to Lennon_Sequences
+> cd /N/dc2/projects/Lennon_Sequences/
+> cd /N/dc2/projects/Lennon_Sequences/2017BrassicaRpf
+
+# Create new project directory
+> mkdir 2017BrassicaRpf
+
+# Accessing the IU CGB Lennon Lab datasite
+https://lims.cgb.indiana.edu/gs454/LennonLab/
+U: JayLennon
+P: pZ3S2a33
+
+# Upload and unzip sequences and mothur datasets to mason
+1) if access is *unrestricted*, Ex:
+> wget ftp://ftp.igsb.anl.gov/jobs/c482b19911c526a9a367f68dd3cff12e/160408_PedroCosta_fastqs/*.gz
+> wget https://www.mothur.org/w/images/b/b4/Silva.nr_v128.tgz
+> wget https://www.mothur.org/w/images/d/dc/Trainset16_022016.rdp.tgz
+Then unzip all .gz files
+> gunzip -d *.gz
+2) if access is *restricted*:
+Download data to personal computer
+> cd /c/Users/Venus/Github/RpfPlants/mothur
+SCP files from home terminal to mason
+> scp *.gz vkuo@mason.indiana.edu:/N/dc2/projects/Lennon_Sequences/2017BrassicaRpf
+> tar -xvf [file name]
+> gunzip -d *.gz
+
+# Uploading all sequence data to SDA
+http://www.indiana.edu/~lennon/index.php?title=Scholarly_Data_Archive_(SDA)
+1) Within the same window/connection, connect to SDA using HSI
+> module load hpss
+> hsi
+> cd /hpss/l/e/lennon/Lennon_Data
+> put FILE
+> ls -l ./
+> !ls -l ./
+> quit
+
+Quality check sequences
+1) Load FASTQC:
+> module load java/1.8.0_40 fastqc/0.10.1
+2) Run FASTQC on sequences:
+> fastqc *fasta
+
+Make text stability file
+1) Manually in a text editior
+example: F3D0 	F3D0_S188_L001_R1_001.fastq  	F3D0_S188_L001_R2_001.fastq
+         F3D141	F3D141_S207_L001_R1_001.fastq	F3D141_S207_L001_R2_001.fastq
+2) Using mothur function:
+2) Load mothur on mason and run :
+> module load gcc/4.9.2
+> module load mothur/1.36.1
+> make.file(inputdir=/N/dc2/projects/Lennon_Sequences/2017BrassicaRpf, outputdir= /N/dc2/projects/Lennon_Sequences/2017BrassicaRpf , type=fastq)
+
+# How to move file from mason to local computer
+1) Open GitBash from local computer and type the following:
+> cd /c/Users/Venus/Github/RpfPlants/mothur/code
+> scp vkuo@mason.indiana.edu:/N/dc2/projects/Lennon_Sequences/2017BrassicaRpf/[filename] .
+
+Submitting a mason job
+1) Convert shell script to UNIX format:
+> dos2unix Brassica.p2.sh
+2) Submit a mason job
+> qsub Batch.p1.sh
