@@ -1,0 +1,8 @@
+classify.otu(list=Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.unique_list.list, count=Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.count_table, taxonomy=Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pds.wang.taxonomy, label=0.03-0.05-0.10)
+get.oturep(list=Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.unique_list.list, fasta=Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.fasta, count=Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.count_table, method=abundance, label=0.03)
+system(cp ./Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.shared ./Brassica.bac.final.shared)
+system(cp ./Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.taxonomy ./Brassica.bac.final.0.03.taxonomy)
+system(cp ./Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.tax.summary ./Brassica.bac.final.0.03.tax.summary)
+system(cp ./Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.05.cons.taxonomy ./Brassica.bac.final.0.05.taxonomy)
+system(cp ./Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.05.cons.tax.summary ./Brassica.bac.final.0.05.tax.summary)
+system(cp ./Brassica.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.rep.fasta ./Brassica.bac.final.0.03.rep.fasta)
