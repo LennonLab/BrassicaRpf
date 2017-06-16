@@ -63,7 +63,7 @@ OTUs <- read.otu(shared = shared, cutoff = "0.16")         # 86% Similarity
 OTUs <- OTUs[, which(colSums(OTUs) >= 2)]
 
 # Subset Brassica samples from OTU matrix #
-OTUs <- OTUs[1:20, ]   # Remove University lake samples
+OTUs <- OTUs[1:20, ]   # First 20 samples
 ```
 
 ## 5) Beta diversity Visualization of soil microbial communities
@@ -78,7 +78,10 @@ PCoA ordination
 Brassica.dj <- vegdist(OTUs, method="jaccard", binary=TRUE)
 Brassica.db <-vegdist(OTUs, method="bray")
 Brassica.db
+```
 
+
+```{r}
 ## Heatmaps ##
 # Custom Color #
 jet.colors <- colorRampPalette(c("#00007F", "Blue", "#007FFF", "cyan",
@@ -92,6 +95,11 @@ levelplot(as.matrix(Brassica.db)[, order], aspect = "iso", col.regions=jet.color
           xlab = "OTUs", ylab = "Sample Sites", scales = list(cex=0.5),
           main = "Bray-Curtis Distance")
 
+```
+
+
+```{r}
+
 ## Cluster Analysis ## 
 Brassica.ward <- hclust(Brassica.db, method = "ward.D2")
 
@@ -101,7 +109,10 @@ plot(Brassica.ward, main="Brassica soil sample OTU clustering",
 heatmap.2(as.matrix(OTUs), distfun = function(x) vegdist(x, method="bray"),
           hclustfun = function(x) hclust(x, method="ward.D2"), 
           col = jet.colors(100), trace="none", density.info = "none")
-                                                    
+
+```    
+
+```{r}
 ## Ordination ## 
 Brassica.pcoa <- cmdscale(Brassica.db, eig = TRUE, k=3)
 Brassica.pcoa
@@ -141,32 +152,28 @@ text(Brassica.pcoa$points[ ,1], Brassica.pcoa$points[ ,2],
 
 ```
 
+```{R}
+# Identify important species #
+spe.corr <- add.spec.scores(Brassica.pcoa, Brassica.REL, method = "cor.scores")$cproj
+corrcut <- 0.7 
+imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+imp.spp
+
+```
+
+
 ## 6) PERMANOVA analysis
 
 ```{r}
-require("BiodiversityR")
+# Create factor vector in Rpf treatment 
+treatment <- c(rep("Active Rpf-",5), rep("Active Rpf+", 5), rep("Total Rpf-", 5), rep("Total Rpf+", 5))
+activity <- c(rep("Active", 5), rep("Total", 5), rep("Active", 5), rep("Total", 5))
+adonis(OTUs ~ activity, method="bray", permutations=999)
+# Result: Rpf treatment and activiy is significant, p-value < 0.001, in structuring soil microbial community # 
 
-# Relative Abundance #
-Brassica.REL <- OTUs
-  for(i in 1:nrow(OTUs)){
-    Brassica.REL[i, ] = OTUs[i, ]
-  }
-
-Brassica.pcoa <- add.spec.scores(Brassica.pcoa, Brassica.REL, method="pcoa")
-text(Brassica.pcoa$cproj[ ,1], Brassica.pcoa$cproj[ ,2],
-     labels=row.names(Brassica.pcoa$cproj), col="black")
-
-spe.corr <- add.spec.scores(Brassica.pcoa, Brassica.REL, method = "cor.scores")$cproj
-corrcut <-0.7
-imp.spp <- spe.corr[abs(spe.corr[ ,1]) >=corrcut | abs(spe.corr[ ,2])>= corrcut, ]
-
-# Permuation test for species abundances across axes #
-fit <- envfit(Brassica.pcoa, Brassica.REL, perm = 999)
-fit
-
-treatment <- c(rep("Rpf+",1), rep("Rpf-", 2), rep("DNA", 1), rep("cDNA", 3))
-adonis(OTUs ~ treatment, method="bray", permutations=999)
-
+# Multi level pattern analysis # 
+indval <- multipatt(OTUs, cluster = treatment, func = "IndVal.g", control = how(nperm=999))
+summary(indval)
 ```
 
 
