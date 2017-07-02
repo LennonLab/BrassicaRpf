@@ -1,0 +1,243 @@
+---
+title: "BrassicaProductivity"
+author: "Venus Kuo"
+date: "June 30, 2017"
+output: pdf_document
+---
+
+## 1) Questions
+
+How does resuscitating the microbial seed bank affect plant fitness and producitivty?
+
+## 2) Experiment methods
+
+In a full factoral experiment treating Brassica rapa plants grown in growth chambers with recombiant Rpf protein in live and sterilized soil. At the end of the six week growth chamber experiment, biomass was determined by dry weight. Flower count was taken prior to harvesting and seeds were counted to determine reproductive fitness. 
+
+## 3) Set working environment and load packages
+
+```{r, message=FALSE, warning=FALSE}
+# Set working directory #
+rm(list = ls())
+getwd()
+setwd("C:/Users/Venus/Github/BrassicaRpf/data")
+
+# Require or install packages #
+package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'reshape', 'reshape2', 'ggplot2') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+```
+
+## 4) Load and describe data set
+
+Plant Fitness.csv : Plant attributes collected at end of 6 week growing period. Information include ID number, Treatment (rpf+ = 1, rpf- = 2), soil type (complex = 2, simple = 1), flower.count, seed.count, SLA (Specific leaf area), height, abiomass (above ground biomass), bbiomass (below ground biomass), dweight (dry weight), wweight (wet weight), shoot.root (shoot:root ratio), total.biomass.
+
+```{r}
+setwd("C:/Users/Venus/Github/BrassicaRpf/data")
+# Load csv files # 
+plantfitness <- read.csv("Plant Fitness.csv", header=T)
+
+# Define factor for plantfitness dataframe levels # 
+plantfitness$Treatment <- factor(plantfitness$Treatment, levels=c(2,1), labels=c("Rpf-", "Rpf+"))
+plantfitness$soil <- factor(plantfitness$soil, levels=c(2,1), labels=c("Live", "Sterilized"))
+
+# Remove compromised replicate #
+plantfitness <- plantfitness[-33, ]
+```
+
+
+## 5) B. rapa plant reproductive fitness 
+
+Bargraph of plant reproductive fitness as a metric of seed counts.
+Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected seed production. 
+One-factor ANOVA testing how Rpf treatment affecte seed production in live soil. 
+Student t-test to test significance of Rpf treatment on seed production in live soil. 
+
+```{r}
+# Averaging the seed counts for each treatment and soil type group # 
+seed.mean <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(seed.count))
+
+# Barplot of mean seed counts #
+seed.mean.barplot<- ggplot(seed.mean, aes(x=soil,y = mean, fill=Treatment)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Calculating standard error #
+seed.mean.sem <- ddply(plantfitness, c("Treatment", "soil"), summarise, 
+                   mean=mean(seed.count), sem=sd(seed.count)/sqrt(length(seed.count)))
+seed.mean.sem <- transform(seed.mean.sem, lower=mean-sem, upper=mean+sem) 
+
+# Plotting bar graph with standard error #
+seed.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=seed.mean.sem, width = 0.2, size = 1.5) +
+  labs(x="Soil type", y="Number of seeds produced") +
+  scale_fill_manual(values=c("Black", "White")) +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18)) +
+  annotate("text", x =0.525, y=87.5, label = c("A"), size=12)
+
+# Two-factored ANOVA of the effect of treatment and soil type on seed count # 
+seed.aov <- anova(lm(seed.count ~ Treatment*soil, data=plantfitness))
+seed.aov
+
+# Subsetting live soil data # 
+plant.sub <- subset(plantfitness, soil=="Live")
+# One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
+seed.live.aov <- anova (lm(seed.count ~ Treatment, data=plant.sub))
+seed.live.aov 
+```
+
+
+## 6) B. rapa potential reproductive fitness
+
+Bargraph of plant potential reproductive fitness as a metric of flower counts.
+Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affects flower production. 
+One-factor ANOVA testing how Rpf treatment affecte flower production in live soil. 
+Student t-test to test significance of Rpf treatment on flower production in live soil. 
+
+
+```{r}
+# Averaging the flower counts for each treatment and soil type group # 
+flower.mean <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(flower.count))
+
+# Barplot of flower production by soil type and treatment
+flower.mean.barplot<- ggplot(flower.mean, aes(x=soil, y = mean, fill=Treatment)) + 
+   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5) 
+
+# Calculating standard error of the mean for flower production # 
+flower.mean.sem <- ddply(plantfitness, c("Treatment", "soil"), summarise,
+                   mean=mean(flower.count), sem=sd(flower.count)/sqrt(length(flower.count)))
+flower.mean.sem <- transform(flower.mean.sem, lower=mean-sem, upper=mean+sem)
+
+# Plotting bar graph with standard error #
+flower.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(.65), data=flower.mean.sem, width = 0.2, size=1.5) +
+  labs(x="Soil type", y="Number of flowers produced") +
+  theme_classic() +
+  scale_fill_manual(values=c("Black", "White")) +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18)) +
+  annotate("text", x =0.515, y=12.75, label = c("B"), size=12)
+
+# Two-factor ANOVA of flower counts with treatment and soil type # 
+flower.aov <- anova(lm(flower.count ~ Treatment*soil, data=plantfitness))
+flower.aov
+# One-factored ANOVA testing the effect of treatment on flower counts of plants in live soil # 
+flower.live.aov <- anova (lm(flower.count ~ Treatment, data=plant.sub))
+flower.live.aov 
+```
+
+
+## 7) B. rapa total plant biomass 
+
+Bargraph of plant total biomass.
+Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected total plant biomass. 
+One-factor ANOVA testing how Rpf treatment affecte total biomass in live soil. 
+Student t-test to test significance of Rpf treatment on total biomass in live soil. 
+
+```{r}
+# Summarize total plant biomass #
+plantmeans <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(total.biomass))
+
+# Barplot of total plant biomass #
+plantmeans.barplot<- ggplot(plantmeans, aes(x= soil ,y = mean, fill = Treatment)) + 
+   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)
+
+# Calculating standard error of means for total plant biomass #
+plantmeans.sem <- ddply(plantfitness, c("soil", "Treatment"), summarise,
+                   mean=mean(total.biomass), sem=sd(total.biomass)/sqrt(length(total.biomass)))
+plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
+
+
+# Barplot of total plant biomass with sem added # 
+plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1.5) +
+  labs(x="Soil type", y="Total plant biomass (g)") +
+  theme_classic() +
+  scale_fill_manual(values=c("Black", "White")) +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18)) +
+  annotate("text", x =0.55, y=2.1, label = c("A"), size=12)
+
+# Two-factor ANOVA of total biomass with treatment and soil type # 
+plant.t.aov <- anova(lm(total.biomass ~ Treatment*soil, data=plantfitness))
+plant.t.aov
+# One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
+total.live.aov <- anova (lm(total.biomass ~ Treatment, data=plant.sub))
+total.live.aov 
+```
+
+
+## 6) B. rapa above and belowground biomass as stacked bargraph
+
+stacked bargraph of plant above and belowground biomass.
+Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected belowground plant biomass. 
+
+
+```{r}
+# Subsetting live soil data # 
+plant.sub.ab <- subset(plantfitness, soil=="Live", select=(c(Treatment, abiomass, bbiomass)))
+# Combining the above and belowground biomass # 
+plant.m <- melt(plant.sub.ab) 
+# Summarizing means of plant biomass data # 
+plant.m.means <- ddply(plant.m, c("Treatment", "variable"), summarise, mean=mean(value))
+# Plotting stacked bar graph # 
+live.biomass.stacked.bar <- ggplot(plant.m.means, aes(x = Treatment, y = mean, fill = variable)) + 
+  geom_bar(width=0.5, colour="black", size=1.5, stat = "identity")
+# Plotting stacked bargraph # 
+live.biomass.stacked.bar + 
+  labs(x="Treatment", y="Plant biomass (g)") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Black")) +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))+
+  annotate("text", x =0.55, y=1.9, label = c("B"), size=12)
+
+# Two-factor ANOVA for belowground biomass changes with soil type and treatment # 
+bbiomass.aov <- anova(lm(bbiomass ~ Treatment*soil, data=plantfitness))
+bbiomass.aov
+
+bb.t.test <- t.test(biomass ~ Treatment)
+```
+
+
+
+
+
+
+
+

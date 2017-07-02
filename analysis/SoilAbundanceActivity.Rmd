@@ -4,44 +4,54 @@ author: "Venus"
 date: "June 16, 2017"
 output: html_document
 ---
-## 1) Questions
+# 1) Questions
 
 - How does Rpf alter the soil microbial community abundance and activity? 
 
+# 2) Setting up work environment 
 
-## 2) Setting up work environment 
-
-```{r, echo = FALSE}
+```{r, message=FALSE, warning=FALSE}
 # Set working directory #
 rm(list = ls())
 getwd()
 setwd("C:/Users/Venus/Github/BrassicaRpf/data")
 
 # Require or install packages #
-package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'tidyr', 'dplyr', 'reshape', 'reshape2', 'ggplot2') 
+package.list <- c('plyr', 'grid' ,'png', 'plyr', 'car', 'bbmle') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
     library(package, character.only=T)
   } }
+
+# Load small function # 
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
 ```
 
-## 3) Description of data set
+# 3) Load data and calculate corrected copy number 
 
 qPCR.csv : Quantitative PCR results of bacterial (EUB 338f-515r) and fungal (5.8f-ITs4r) gene copy abundances in live soil DNA taken from experimental pots containing Brassica plants. CSV file contains Treatment, Rep, Week, Well position, and Gene copy amount.
 
 GCH_CO2.csv : CO2 respiration measurement of growth chamber soil samples for all six weeks. Contains sample ID, treatment (rpf+ = 1, rpf-= 2), soil (simple = 1, complex = 2), plant (present = 1, not present = 2), hour, week 1-6.
-
-
-## 4) Load data set
 
 ```{r}
 # Set working directory # 
 setwd("C:/Users/Venus/Github/BrassicaRpf/data")
 
 # Read csv files # 
-abundance <- read.csv("qPCR.csv", header=T) # Log transformed and standardized based on soil gram # 
-CO2 <- read.csv("GCH_CO2.csv", header=T)
+abundance.raw <- read.csv("qPCR.txt", sep = "\t", header=T) 
+
+# abundance.raw[,x] = copies not corrected by dilution factor
+# abundance.raw[,8] = dilution factor
+# abundance.raw[,9] = volume (uL) in supernatant of phenol-chloroform extraction
+# abundance.raw[,10] = volume (ul) from supernatant of phenol-chlorofom subsampled
+
+copies.corr <- abundance.raw[,7] * (abundance.raw[,8] * (abundance.raw[,9]/abundance.raw[,10]))
+
+
+# Log transformed and standardized based on soil gram # 
+
+CO2 <- read.csv("GCH_CO2.txt", sep = "\t" , header=T)
 
 # Define factor levels for bacterial and fungal qPCR data
 abundance$Week<- factor(abundance$Week)

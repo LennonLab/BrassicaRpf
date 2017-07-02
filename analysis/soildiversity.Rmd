@@ -1,0 +1,432 @@
+---
+title: "SoilCommunity"
+author: "Venus Kuo"
+date: "June 30, 2017"
+output: html_document
+---
+
+# 1) Question: How does Rpf treatment affect soil microbial alpha and beta diversity?
+
+Here, I will analyze the alpha and beta diversity of the active and total microbial community of week 6 Brassica planted potted soil. 
+
+# 2) Set up work environment and load dependencies 
+
+```{r, message=FALSE, warning=FALSE}
+# Setup work enviroment 
+rm(list = ls())
+setwd("C:/Users/Venus/GitHub/BrassicaRpf/analysis")
+
+# Source code functions # 
+source("C:/Users/Venus/GitHub/BrassicaRpf/bin/DiversityFunctions.R")
+source("C:/Users/Venus/GitHub/BrassicaRpf/bin/MothurTools.R")
+source("C:/Users/Venus/GitHub/BrassicaRpf/bin/phylodiversity2.R")
+
+# Load dependencies # 
+package.list <- c('vegan', 'plyr' , 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn',  'BiodiversityR') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+# Small custom functions # 
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+
+ttest <- function(reg, coefnum, val){
+  co <- coef(summary(reg))
+  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
+  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
+  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
+}
+```
+
+# 3) Describe and load data set
+
+.shared and .taxonomy file are outputs of alignment and clustering programing mothur. 
+
+```{r}
+## Define Inputs
+# Design = general design file for experiment
+# shared = OTU table from mothur with sequence similarity clustering
+# tax = Taxonomy for 97% similarity OTUs
+
+design <- "C:/Users/Venus/GitHub/BrassicaRpf/data/Brassica.design.txt"
+shared <- "C:/Users/Venus/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.shared"
+tax <- "C:/Users/Venus/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.0.03.taxonomy"
+
+# Run All: Select if all section are to be re-run
+run.all <- TRUE
+```
+
+## Import Design, Shared, and Taxonomy files
+
+```{r}
+# Import Design
+design <- read.delim(design, header=T, row.names=1)
+
+# Import Shared Files
+OTU <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
+
+# Import Taxonomy
+OTU.tax <- read.tax(taxonomy = tax, format = "rdp")
+
+#OTU.tre <- read.tree("../mothur/output/Brassica.bac.rename.tree")
+```
+
+# 4) Calculate Coverage Stats
+
+```{r}
+# Remove OTUs with less than two occurences across all sites # 
+OTU <- OTU[, which(colSums(OTU) >= 2)]
+
+# Remove mock community # 
+OTU <- OTU[1:20, ]
+
+# Determine coverage of sequences # 
+cov.seqs <- count.groups(OTU)
+cov.mean <- mean(cov.seqs) # 1160871
+cov.sem <- sem(cov.seqs) # 16095
+cov.min <- min(cov.seqs) # 79797
+total.seqs <- sum(cov.seqs) # 3,217,419
+
+# Good's coverage
+goods.c <- function(x = ""){
+              1 - (apply(OTU, 1, function(x){sum(x == 1)}) / rowSums(x))
+}
+
+goods.c.Brassica <- goods.c(OTU)
+mean.good.c <- mean(goods.c.Brassica) # 0.98
+min.good.c <- min(goods.c.Brassica) # 0.96 
+# Coverage is good # 
+```
+
+# 5) Alpha diversity
+## Calculate Alpha diversity using Resampling
+
+```{r}
+# Mario's resampling code to estimate alpha diversity (used if run.all = T)
+
+if (run.all == TRUE){
+  rich <- round(richness.iter(input = OTU, size = 30000,
+                              iters = 100, shared = "FALSE"), 3)
+  even <- round(evenness.iter(input = OTU, size = 30000,
+                              iters = 100, shared = "FALSE",
+                              method = "simp_even"), 3)
+
+  rare <- rarefy(OTU, 30000, se = FALSE, MARGIN = 1)
+
+  # Write output to files
+  write.table(rich, "../data/rich.txt", sep = "\t",
+              col.names = T, row.names = T)
+  write.table(even, "../data/even.txt", sep = "\t",
+              col.names = T, row.names = T)
+}
+
+# Read in alpha diversity files from above
+rich2 <- read.table("../data/rich.txt", sep = "\t")
+even2 <- read.table("../data/even.txt", sep = "\t")
+
+# Merge data to design and calculate mean and sem per sample
+rich.data <- merge(design, rich2, by = "row.names")
+row.names(rich.data) <- rich.data$Row.names
+rich.data <- rich.data[sort(row.names(rich.data)), ]
+rich.mean <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, mean, na.rm = TRUE),3)
+rich.sem <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, sem, na.rm = TRUE), 3)
+
+even.data <- merge(design, even2, by = "row.names")
+row.names(even.data) <- even.data$Row.names
+even.data <- even.data[sort(row.names(even.data)), ]
+even.mean <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, mean, na.rm = TRUE),3)
+even.sem <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, sem, na.rm = TRUE),4)
+
+# Make new dataframe merging design file and mean diversity
+Brassica.div <- data.frame(design[sort(row.names(design)), ], rich.mean, even.mean)
+
+# Take averages of technial reps
+rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, rich = mean(rich.mean))
+even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, even = mean(even.mean))
+
+# Reshape data
+rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep.num"), direction = "wide")
+
+even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep.num"), direction = "wide")
+# Results: 
+# Mean richness for active and Rpf+ communities is 3833.306, evenness is 0.050
+# Mean richness for active and Rpf- communities is 3430.956, evenness is 0.0596
+# Mean richness for total and Rpf+ communities is 2886.790, evenness is 0.059
+# Mean richness for total and Rpf- communities is 3236.336, evenness is 0.0564
+```
+
+## Richness: differences among treatment?
+
+```{r}
+# Rpf treatment to soil # 
+rich.anova.c <- aov(rich.2$rich.cDNA ~ rich.2$treatment)
+summary(rich.anova.c)
+TukeyHSD(rich.anova.c)
+
+even.anova.d <- aov(even.2$even.DNA ~ even.2$treatment)
+summary(even.anova.d)
+TukeyHSD(even.anova.d)
+# Results: 
+# Active community richness was not significantly affected by Rpf treatment p=0.479, evenness p=0.316
+# Total community richness was not significantly affected by Rpf treatment p=0.33, evenness p=0.865
+```
+
+## Richness: does Rpf treatment "inflate" diversity?
+
+```{r}
+# Take averages of technial reps
+rich.rep.ave <- ddply(Brassica.div, .(type, treatment, rep.num),
+                      summarize, rich = mean(rich.mean))
+
+# Reshape data
+rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep.num"), direction = "wide")
+
+# Calcualte means +/- SEM of control and treated richness
+rich.2.ag.mean.control <- aggregate(rich.cDNA ~ treatment, rich.2, mean)
+rich.2.ag.sem.control <- aggregate(rich.cDNA ~ treatment, rich.2, sem)
+rich.2.ag.mean.treatment <- aggregate(rich.DNA ~ treatment, rich.2, mean)
+rich.2.ag.sem.treatment <- aggregate(rich.DNA ~ treatment, rich.2, sem)
+
+# Calculate ratios
+rich.2$rich.ratio <- rich.2$rich.cDNA / rich.2$rich.DNA
+
+# Richness table
+rich.2.ag.mean <- aggregate(rich.ratio ~ treatment, rich.2, mean)
+rich.2.ag.sem <- aggregate(rich.ratio ~ treatment, rich.2, sem)
+rich.2.ag.95 <- aggregate(rich.ratio ~ treatment, rich.2,
+                  FUN = function(x) t.test(x)$conf.int[1:2])
+rich.table <- data.frame(rich.2.ag.mean$treatment, rich.2.ag.mean$rich.ratio,
+                         rich.2.ag.sem$rich.ratio, rich.2.ag.95$rich.ratio)
+colnames(rich.table) <- c("treatment", "mean", "sem", "LCI", "UCI")
+
+# One-factor ANOVA 
+rich.reg <- lm(rich.2$rich.ratio ~ rich.2$treatment)
+Anova(rich.reg)
+ttest(rich.reg, 1, 1)
+ttest(rich.reg, 2, 0)
+
+# Results: Rpf treatment appears to marginally increase active microbial diversity but this was not statistically significant p= 0.1163 
+```
+
+## Evenness: differences among sites?
+```{r}
+even.anova.c <- aov(even.2$even.cDNA ~even.2$treatment)
+summary(even.anova.c)
+TukeyHSD(even.anova.c)
+
+even.anova.d <- aov(even.2$even.DNA ~even.2$treatment)
+summary(even.anova.d)
+TukeyHSD(even.anova.d)
+
+# Results: Rpf treatment did not affect evenness of active (p=0.316) or total community (p=0.865).
+```
+
+## Evenness: does Brassica "inflate" diversity?
+
+```{r}
+# Take averages of technial reps
+even.rep.ave <- ddply(Brassica.div, .(type, treatment, rep.num),
+                      summarize, even = mean(even.mean))
+
+# Reshape data
+even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep.num"), direction = "wide")
+
+# Calcualte means +/- SEM of control and treated evenness
+even.2.ag.mean.control <- aggregate(even.cDNA ~ treatment, even.2, mean)
+even.2.ag.sem.control <- aggregate(even.cDNA ~ treatment, even.2, sem)
+even.2.ag.mean.treatment <- aggregate(even.DNA ~ treatment, even.2, mean)
+even.2.ag.sem.treatment <- aggregate(even.DNA ~ treatment, even.2, sem)
+
+# Calculate ratios
+even.2$even.ratio <- even.2$even.cDNA / even.2$even.DNA
+
+# evenness table
+even.2.ag.mean <- aggregate(even.ratio ~ treatment, even.2, mean)
+even.2.ag.sem <- aggregate(even.ratio ~ treatment, even.2, sem)
+even.2.ag.95 <- aggregate(even.ratio ~ treatment, even.2,
+                  FUN = function(x) t.test(x)$conf.int[1:2])
+even.table <- data.frame(even.2.ag.mean$treatment, even.2.ag.mean$even.ratio,
+                         even.2.ag.sem$even.ratio, even.2.ag.95$even.ratio)
+colnames(even.table) <- c("treatment", "mean", "sem", "LCI", "UCI")
+
+# One-factor ANOVA 
+even.reg <- lm(even.2$even.ratio ~ even.2$treatment)
+Anova(even.reg)
+ttest(even.reg, 1, 1)
+ttest(even.reg, 2, 0)
+
+# Results: Rpf treatment did not affect active or total community evenness. 
+```
+
+# 6) Beta Diversity
+
+## Taxonomic Beta Diversity 
+
+```{r}
+# Make presence-absence matrix
+OTU.PA <- (OTU > 0) * 1
+
+# Make relative abundence matrix
+OTU.REL <- OTU
+for (i in 1:dim(OTU)[1]){
+  OTU.REL[i,] <- OTU[i,]/sum(OTU[i,])
+  }
+
+# Log-transform relative abundances
+OTU.REL.log <- decostand(OTU, method="log")
+
+Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
+Brassica.dis.mean <- mean(Brassica.bc.dis)
+
+# Principal Coordinates Analysis (PCoA)
+Brassica.PCoA <- cmdscale(Brassica.bc.dis, eig = TRUE, k = 3)
+explainvar1 <- round(Brassica.PCoA$eig[1] / sum(Brassica.PCoA$eig), 3) * 100
+explainvar2 <- round(Brassica.PCoA$eig[2] / sum(Brassica.PCoA$eig), 3) * 100
+explainvar3 <- round(Brassica.PCoA$eig[3] / sum(Brassica.PCoA$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+# OTU Scores
+otu.scores <- t(cor(Brassica.PCoA$points, OTU.REL))
+otu.scores <- as.matrix(otu.scores)[,1:2]
+otu.scores <- otu.scores[abs(otu.scores[,1]) > 0.7|abs(otu.scores[,2]) > 0.7,]
+
+# Average BC Distance Between Treatments
+Brassica.bc.dis.m <- as.matrix(Brassica.bc.dis)
+all.equal(row.names(Brassica.div), rownames(Brassica.bc.dis.m))
+
+treatment.div <- unique(Brassica.div$treatment)
+treatment.dis <- rep(NA, length(treatment.div))
+for(i in 1:length(treatment.div)){
+  temp <- row.names(Brassica.div[Brassica.div$treatment == treatment.div[i], ])
+  treatment.dis[i] <- Brassica.bc.dis.m[temp[1], temp[2]]
+}
+
+mean(treatment.dis)
+```
+
+## PCoA plots
+
+```{r}
+#png(filename="../figures/FigureS2-Ordinations.png",
+#    width = 1800, height = 800, res = 96*2)
+layout(matrix(1:3, 1, 3), widths = c(9, 9, 2.5))
+par(mar = c(4, 5, 4, 0) + 0.5)
+
+plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
+     ylim = c(-0.4, 0.4), xlim = c(-0.5, 0.4),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""),
+     #xlab = "", ylab = "", xaxt = "n", yaxt = "n",
+     pch = 22, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1,
+     axes = FALSE)
+
+# Add Axes
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.25, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.25, las = 1)
+axis(side = 3, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
+axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
+axis(side = 1, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+axis(side = 2, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+axis(side = 3, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+mtext(side = 3, "Taxonomic PCoA", line = 1.5, cex = 1)
+text("a", x = -0.48, y = 0.38, font = 2, cex = 1.8)
+
+# Subset data
+Brassica.div.sort <- Brassica.div[order(Brassica.div[,1]) ,]
+all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div.sort))
+Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div.sort)
+
+# Active community
+Brassica.active.rpf <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.active.no <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+# Total community
+Brassica.total.rpf <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+
+# Add points
+# Active community Rpf+
+points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
+       cex = 2, col = "red", bg = "white", lwd = 2)
+# Active community Rpf-
+points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
+       cex = 2, col = "red", bg = "red", lwd = 2)   
+# Total community Rpf+ 
+points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 22,
+       cex = 2, col = "darkgreen", bg = "white", lwd = 2)
+# Total community Rpf-
+points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 22,
+       cex = 2, col = "darkgreen", bg = "darkgreen", lwd = 2)
+
+# Add Legend Outside
+par(mar = c(4, 0, 5, 1) + 0.5)
+plot.new()
+legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
+       pch = c(21, 21, 22, 22),
+       pt.bg = c("white", "red", "white", "darkgreen"),
+       bty = "n", y.intersp = 1.5, cex = 1.25)
+```
+
+# Beta diversity statistics 
+
+## PERMANOVA: Taxonomic
+
+```{r}
+# Check Order of Dataframes
+all.equal(row.names(Brassica.div), row.names(OTU.REL.log))
+
+Brassica.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
+                         method = "bray", binary = FALSE)
+Brassica.permanova
+
+Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
+beta.disp <- betadisper(d = Brassica.bc.dis, group = Brassica.div$treatment)
+permutest(beta.disp, 99)
+TukeyHSD(beta.disp)
+# Results: Activity status affects the microbial community compositon --> expected
+# Rpf treatment affect, but not signifcantly, the microbial community (p=0.074) 
+```
+
+# Mantel Test: Taxonomic 
+
+```{r}
+# Check order of design
+all.equal(row.names(Brassica.div), row.names(OTU.REL.log))
+
+# Subset OTU Matrix for Each Molecule
+OTU.REL.a <- OTU.REL.log[which(Brassica.div$type == "cDNA"), ]
+OTU.REL.t <- OTU.REL.log[which(Brassica.div$type == "DNA"), ]
+
+# Subset the Design Matrix
+Brassica.div.a <- Brassica.div[which(Brassica.div$type == "cDNA"), ]
+Brassica.div.t <- Brassica.div[which(Brassica.div$type == "DNA"), ]
+
+# Calculate Bray-Curtis Distances
+dist.a <- vegdist(OTU.REL.a, "bray")
+dist.t <- vegdist(OTU.REL.t, "bray")
+
+# Run Mantel Test of Distance Matrix
+mantel.rtest(dist.a, dist.t, nrepet = 999)
+# Results: Treatment did not have a effect on soil microbial community
+```
+
+
+
+
+
+
+
+
