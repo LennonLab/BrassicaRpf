@@ -1,19 +1,17 @@
 ---
 title: "BrassicaProductivity"
 author: "Venus Kuo"
-date: "June 30, 2017"
+date: "July 03, 2017"
 output: pdf_document
 ---
 
-## 1) Questions
+# 1) Questions
 
 How does resuscitating the microbial seed bank affect plant fitness and producitivty?
 
-## 2) Experiment methods
+Here, I performed a full factoral experiment treating Brassica rapa plants grown in growth chambers with recombiant Rpf protein in live and sterilized soil. At the end of the six week growth chamber experiment, biomass was determined by dry weight. Flower count was taken prior to harvesting and seeds were counted to determine reproductive fitness. 
 
-In a full factoral experiment treating Brassica rapa plants grown in growth chambers with recombiant Rpf protein in live and sterilized soil. At the end of the six week growth chamber experiment, biomass was determined by dry weight. Flower count was taken prior to harvesting and seeds were counted to determine reproductive fitness. 
-
-## 3) Set working environment and load packages
+# 2) Set working environment and load packages
 
 ```{r, message=FALSE, warning=FALSE}
 # Set working directory #
@@ -30,32 +28,29 @@ for (package in package.list) {
   } }
 ```
 
-## 4) Load and describe data set
+# 3) Load and describe data set
 
 Plant Fitness.csv : Plant attributes collected at end of 6 week growing period. Information include ID number, Treatment (rpf+ = 1, rpf- = 2), soil type (complex = 2, simple = 1), flower.count, seed.count, SLA (Specific leaf area), height, abiomass (above ground biomass), bbiomass (below ground biomass), dweight (dry weight), wweight (wet weight), shoot.root (shoot:root ratio), total.biomass.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 setwd("C:/Users/Venus/Github/BrassicaRpf/data")
+
 # Load csv files # 
 plantfitness <- read.csv("Plant Fitness.csv", header=T)
-
-# Define factor for plantfitness dataframe levels # 
-plantfitness$Treatment <- factor(plantfitness$Treatment, levels=c(2,1), labels=c("Rpf-", "Rpf+"))
-plantfitness$soil <- factor(plantfitness$soil, levels=c(2,1), labels=c("Live", "Sterilized"))
 
 # Remove compromised replicate #
 plantfitness <- plantfitness[-33, ]
 ```
 
+# 4) Brassica rapa plant realized and potential reproductive fitness 
 
-## 5) B. rapa plant reproductive fitness 
-
-Bargraph of plant reproductive fitness as a metric of seed counts.
-Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected seed production. 
-One-factor ANOVA testing how Rpf treatment affecte seed production in live soil. 
-Student t-test to test significance of Rpf treatment on seed production in live soil. 
+Bargraph of plant reproductive fitness as a metric of seed and flower counts.
+Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected seed and flower production. 
+One-factor ANOVA testing how Rpf treatment affecte seed and flower production in live soil. 
+Student t-test to test significance of Rpf treatment on seed and flower production in live soil. 
 
 ```{r}
+# Seed production # 
 # Averaging the seed counts for each treatment and soil type group # 
 seed.mean <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(seed.count))
 
@@ -86,27 +81,8 @@ seed.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         legend.text=element_text(size=18)) +
   annotate("text", x =0.525, y=87.5, label = c("A"), size=12)
 
-# Two-factored ANOVA of the effect of treatment and soil type on seed count # 
-seed.aov <- anova(lm(seed.count ~ Treatment*soil, data=plantfitness))
-seed.aov
 
-# Subsetting live soil data # 
-plant.sub <- subset(plantfitness, soil=="Live")
-# One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
-seed.live.aov <- anova (lm(seed.count ~ Treatment, data=plant.sub))
-seed.live.aov 
-```
-
-
-## 6) B. rapa potential reproductive fitness
-
-Bargraph of plant potential reproductive fitness as a metric of flower counts.
-Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affects flower production. 
-One-factor ANOVA testing how Rpf treatment affecte flower production in live soil. 
-Student t-test to test significance of Rpf treatment on flower production in live soil. 
-
-
-```{r}
+# Flower Production # 
 # Averaging the flower counts for each treatment and soil type group # 
 flower.mean <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(flower.count))
 
@@ -136,17 +112,37 @@ flower.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
   annotate("text", x =0.515, y=12.75, label = c("B"), size=12)
+```
 
+# 5) Does Rpf treatment and soil type affect plant reproductive fitness?
+
+```{r}
+# Seed count # 
+# Two-factored ANOVA of the effect of treatment and soil type on seed count # 
+seed.aov <- anova(lm(seed.count ~ Treatment*soil, data=plantfitness))
+seed.aov
+
+# Subsetting live soil data # 
+plant.sub <- subset(plantfitness, soil=="Live")
+
+# One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
+seed.live.aov <- aov(seed.count ~ Treatment, data=plant.sub)
+summary(seed.live.aov)
+TukeyHSD(seed.live.aov)
+
+# Flower count # 
 # Two-factor ANOVA of flower counts with treatment and soil type # 
 flower.aov <- anova(lm(flower.count ~ Treatment*soil, data=plantfitness))
 flower.aov
+
 # One-factored ANOVA testing the effect of treatment on flower counts of plants in live soil # 
-flower.live.aov <- anova (lm(flower.count ~ Treatment, data=plant.sub))
-flower.live.aov 
+flower.live.aov <- aov(flower.count ~ Treatment, data=plant.sub)
+summary(flower.live.aov)
+TukeyHSD(flower.live.aov)
+# Results: Rpf treatment did not affect reproductivie fitness. 
 ```
 
-
-## 7) B. rapa total plant biomass 
+# 6) Brassica rapa total plant biomass 
 
 Bargraph of plant total biomass.
 Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected total plant biomass. 
@@ -185,36 +181,35 @@ plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         legend.text=element_text(size=18)) +
   annotate("text", x =0.55, y=2.1, label = c("A"), size=12)
 
-# Two-factor ANOVA of total biomass with treatment and soil type # 
-plant.t.aov <- anova(lm(total.biomass ~ Treatment*soil, data=plantfitness))
-plant.t.aov
-# One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
-total.live.aov <- anova (lm(total.biomass ~ Treatment, data=plant.sub))
-total.live.aov 
-```
 
 
-## 6) B. rapa above and belowground biomass as stacked bargraph
-
-stacked bargraph of plant above and belowground biomass.
-Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected belowground plant biomass. 
-
-
-```{r}
+# Belowground biomass # 
 # Subsetting live soil data # 
 plant.sub.ab <- subset(plantfitness, soil=="Live", select=(c(Treatment, abiomass, bbiomass)))
+
 # Combining the above and belowground biomass # 
 plant.m <- melt(plant.sub.ab) 
+
 # Summarizing means of plant biomass data # 
 plant.m.means <- ddply(plant.m, c("Treatment", "variable"), summarise, mean=mean(value))
+
 # Plotting stacked bar graph # 
 live.biomass.stacked.bar <- ggplot(plant.m.means, aes(x = Treatment, y = mean, fill = variable)) + 
   geom_bar(width=0.5, colour="black", size=1.5, stat = "identity")
+
+plant.m.sub <- subset(plant.m, variable == "bbiomass")
+
+# Calculating standard error of means for total plant biomass #
+plantmeans.sem <- ddply(plant.m.sub, c("Treatment", "variable"), summarise,
+                   mean=mean(value), sem=sd(value)/sqrt(length(value)))
+plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
+
 # Plotting stacked bargraph # 
-live.biomass.stacked.bar + 
+live.biomass.stacked.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0), data=plantmeans.sem, width = 0.2, size=1.5) +
   labs(x="Treatment", y="Plant biomass (g)") +
   theme_classic() +
-  scale_fill_manual(values=c("White", "Black")) +
+  scale_fill_manual(values=c("White", "Grey")) +
   theme(axis.text.y=element_text(colour="black", size=18),
         axis.text.x=element_text(colour="black", size =18),
         axis.title=element_text(size=22),
@@ -226,13 +221,54 @@ live.biomass.stacked.bar +
         legend.title = element_text(size=18),
         legend.text=element_text(size=18))+
   annotate("text", x =0.55, y=1.9, label = c("B"), size=12)
+```
 
+# 7) Does Rpf treatment affect total and belowground biomass? 
+
+stacked bargraph of plant above and belowground biomass.
+Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment affected belowground plant biomass. 
+
+```{r}
+# Total biomass # 
+# Two-factor ANOVA of total biomass with treatment and soil type # 
+plant.t.aov <- anova(lm(total.biomass ~ Treatment*soil, data=plantfitness))
+plant.t.aov
+# Test of normality # 
+qqnorm(plantfitness$total.biomass)
+shapiro.test(plantfitness$total.biomass)
+# Results: p = 0.06, data is normal # 
+
+# One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
+total.live.aov <- aov(total.biomass ~ Treatment, data=plant.sub)
+summary(total.live.aov)
+TukeyHSD(total.live.aov)
+# Results: Two-factor ANOVA showed that Rpf treatment had a strong effect on total plant biomass p = 0.002
+# One factor ANOVA for live soil only showed that Rpf treatment had a strong effect on total biomass p = 0.0132, 
+#post-hoc t-test showed that Rpf treatment decreased biomass 0.6485, which is approximately a 33% reducting in total biomass between Rpf- and Rpf+ treatment. 
+
+
+# Belowground biomass # 
 # Two-factor ANOVA for belowground biomass changes with soil type and treatment # 
 bbiomass.aov <- anova(lm(bbiomass ~ Treatment*soil, data=plantfitness))
 bbiomass.aov
+# One-factor ANOVA for belowground biomass changes with treatment # 
+bbiomass.aov <- aov(bbiomass ~ Treatment, data=plantfitness)
+summary(bbiomass.aov)
+TukeyHSD(bbiomass.aov)
 
-bb.t.test <- t.test(biomass ~ Treatment)
+
+# Aboveground biomass # 
+# Two-factor ANOVA for above ground biomass # 
+abiomass.aov <- anova(lm(abiomass ~ Treatment*soil, data=plantfitness))
+abiomass.aov
+
+abiomass.aov <- aov(abiomass ~ Treatment, data=plantfitness)
+summary(abiomass.aov)
+TukeyHSD(abiomass.aov)
 ```
+
+
+
 
 
 
