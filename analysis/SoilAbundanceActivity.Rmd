@@ -1,7 +1,7 @@
 ---
 title: "SoilAbundanceActivity"
 author: "Venus"
-date: "June 16, 2017"
+date: "July 03, 2017"
 output: html_document
 ---
 # 1) Questions
@@ -17,7 +17,7 @@ getwd()
 setwd("C:/Users/Venus/Github/BrassicaRpf/data")
 
 # Require or install packages #
-package.list <- c('plyr', 'grid' ,'png', 'plyr', 'car', 'bbmle') 
+package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -34,37 +34,24 @@ qPCR.csv : Quantitative PCR results of bacterial (EUB 338f-515r) and fungal (5.8
 
 GCH_CO2.csv : CO2 respiration measurement of growth chamber soil samples for all six weeks. Contains sample ID, treatment (rpf+ = 1, rpf-= 2), soil (simple = 1, complex = 2), plant (present = 1, not present = 2), hour, week 1-6.
 
-```{r}
+```{r , message=FALSE, warning=FALSE}
 # Set working directory # 
 setwd("C:/Users/Venus/Github/BrassicaRpf/data")
 
 # Read csv files # 
-abundance.raw <- read.csv("qPCR.txt", sep = "\t", header=T) 
+abundance <- read.csv("qPCR.csv", header=T) 
+# Log transformed and standardized based on soil gram and extracted DNA concentration # 
 
-# abundance.raw[,x] = copies not corrected by dilution factor
-# abundance.raw[,8] = dilution factor
-# abundance.raw[,9] = volume (uL) in supernatant of phenol-chloroform extraction
-# abundance.raw[,10] = volume (ul) from supernatant of phenol-chlorofom subsampled
+CO2 <- read.csv("GCH_CO2.csv", header=T)
 
-copies.corr <- abundance.raw[,7] * (abundance.raw[,8] * (abundance.raw[,9]/abundance.raw[,10]))
-
-
-# Log transformed and standardized based on soil gram # 
-
-CO2 <- read.csv("GCH_CO2.txt", sep = "\t" , header=T)
-
-# Define factor levels for bacterial and fungal qPCR data
+# Define factor levels for bacterial and fungal qPCR data # 
 abundance$Week<- factor(abundance$Week)
 abundance <- na.omit(abundance)
 
-# Define factor for CO2 respiration 
-CO2$Treatment <- factor(CO2$Treatment, levels=c(2,1), labels=c("Rpf-", "Rpf+"))
-CO2$soil <- factor(CO2$soil, levels=c(2,1), labels=c("Live", "Sterilized"))
-CO2$hour <- factor(CO2$hour)
-CO2$plant <- factor(CO2$plant, levels = c(2,1), labels=c("Not Present", "Present"))
+# Define factor levels for microbial soil respiration data # 
 ```
 
-## 5) Visualization of microbial abundance in soil
+# 4) Visualization of microbial abundance in soil
 
 qPCR gene copy abundances as a metric for bacterial (16s rRNA). 
 Two-factor ANOVA testing the effect of Rpf treatment and week number (1 or 6) on bacterial soil abundance.
@@ -102,17 +89,11 @@ bac.means.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks.length = unit(.25, "cm"),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
-        legend.text=element_text(size=18)) #+
-  annotate("text", x =0.55, y=17500, label = c("A"), size=12)
+        legend.text=element_text(size=18)) +
+  annotate("text", x =0.55, y=4000, label = c("A"), size=12)
 
-# Two Factor ANOVA of 16S rRNA bacterial gene copy abundances affected by Treatment and week of growth chamber experiment # 
-bac.aov <- anova(lm(Std.Gene.Copy ~ Treatment*Week, data=bac.abundance))
-bac.aov
-# Results: Rpf application to potted soil significantly (p<0.005) reduces bacterial 16S rRNA gene copy numbers # 
-# Gene copy number increases significantly over the 6 week growth chamber experiment # 
 
-#####
-
+# Fungal ITS # 
 # Subset ITS gene copy data # 
 ITS.abundance <- subset(abundance, Gene=="ITS" , select=c(Treatment, Week, Std.Gene.Copy))
 
@@ -146,8 +127,21 @@ ITS.mean.barplot +
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.55, y=42000, label = c("B"), size=12)
+  annotate("text", x =0.55, y=23000, label = c("B"), size=12)
+```
 
+# 5) Does Rpf treatment affect Bacterial and fungal gene copy abundances?
+
+```{r}
+# Bacterial 16S rRNA # 
+# Two Factor ANOVA of 16S rRNA bacterial gene copy abundances affected by Treatment and week of growth chamber experiment # 
+bac.aov <- anova(lm(Std.Gene.Copy ~ Treatment*Week, data=bac.abundance))
+bac.aov
+# Results: Rpf application to potted soil significantly (p<0.005) reduces bacterial 16S rRNA gene copy numbers # 
+# Gene copy number increases significantly over the 6 week growth chamber experiment # 
+
+
+# Fungal ITS # 
 # Two Factor ANOVA of ITS Fungal gene copy abundances affected by Treatment and week of growth chamber experiment # 
 ITS.aov <- anova(lm(Std.Gene.Copy ~ Treatment*Week, data=ITS.abundance))
 ITS.aov
@@ -155,14 +149,13 @@ ITS.aov
 # Gene copy number increases significantly over the 6 week growth chamber experiment # 
 ```
 
-## 6) Visualization of microbial activity in soil 
+# 6) Visualization of microbial activity in soil 
 
 24 and 48 hour soil CO2 respiration taken each week over the course of growth chamber experiment. 
 
-
 ```{r}
 # Subsetting relevant data from CO2 dataset # 
-CO2.sub <- subset(CO2, plant=="Present" & hour =="48" & soil=="Sterilized", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6))
+CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6))
 
 # Melt data into three columns of treatment, soil and weeks # 
 CO2.m <- melt(CO2.sub)
@@ -171,100 +164,51 @@ CO2.m <- melt(CO2.sub)
 CO2.means <- ddply(CO2.m, c("Treatment", "variable"), summarise, mean=mean(value))
 
 # Calculating standard error of the means # 
-CO2.means.sem <- ddply(CO2.means, c("Treatment", "variable"), summarise,
-                   mean=mean(mean), sem=sd(mean)/sqrt(length(mean)))
+CO2.means.sem <- ddply(CO2.m, c("Treatment", "variable"), summarise,
+                   mean=mean(value), sem=sd(value)/sqrt(length(value)))
 
 CO2.means.sem <- transform(CO2.means.sem, lower=mean-sem, upper=mean+sem)
 
 # Plot line graph of summarized data # 
-resp.line <- ggplot(CO2.means, aes(x=variable, y=mean, color=Treatment)) + 
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+resp.line <- ggplot(CO2.means, aes(x=variable, y=mean, color=Treatment, linetype=)) + 
+    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.075) +
     geom_line() +
     geom_point()
 
 # The errorbars overlapped, so use position_dodge to move them horizontally
-pd <- position_dodge(0.1) # move them .05 to the left and right
+pd <- position_dodge(0) # move them .05 to the left and right
 
 # Plot line graph # 
 ggplot(CO2.means, aes(x=variable, y=mean, colour=Treatment, group=Treatment)) + 
-  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
-                data=CO2.means.sem, width = 0.2, size=1.5, colour="black") +
-    geom_line(position=pd, size=1) +
-    geom_point(position=pd, size=3, shape=21, fill="white") + # 21 is filled circle
+  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0), 
+                data=CO2.means.sem, width = 0.2, size=1) +
+    geom_line(position=pd, size=1.5) +
+    geom_point(position=pd, size=5, shape=21, fill="white") + # 21 is filled circle
     xlab("Growth chamber experiment weeks") +
     ylab("Soil CO2 respiration (ppm)") +
     scale_colour_hue(name="Treatment",    # Legend label, use darker colors
                      #breaks=c("Rpf-", "Rpf+"),
                      labels=c("Rpf-", "Rpf+"),
                      l=40) +   # Use darker colors, lightness=40
-    theme_bw() +
+    theme_classic() +
     theme(legend.justification=c(1,0),
-          legend.position=c(0.95,0.75),               # Position legend in bottom right
+          legend.position=c(0.95,0.15),               # Position legend in bottom right
           axis.text.y=element_text(colour="black", size=12),
           axis.text.x=element_text(colour="black", size =12),
           axis.title=element_text(size=15),
           axis.title.y = element_text(colour="black",  margin = margin(0,10,0,0)),
           axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
-          panel.border = element_rect(linetype = "solid", colour = "black", size=2, fill=NA))   
-
-# Make line graph of all factors # 
-
+          panel.border = element_rect(linetype = "solid", colour = "black", size=2, fill=NA)) +
+  scale_color_manual(values=c('#999999','#E69F00'))
 ```
 
-
-## 7) Time series analysis of CO2 respiration across growth chamber experiment 
+# 6) Time series analysis of CO2 respiration across growth chamber experiment 
 
 Perform RM-ANOVA on CO2 respiration dataset. 
 
-
-```{r}
-# Require or install packages #
-package.list <- c('vegan', 'tidyr', 'dplyr', 'codyn', 'ggplot2', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander') 
-for (package in package.list) {
-  if (!require(package, character.only=T, quietly=T)) { 
-    install.packages(package)
-    library(package, character.only=T)
-  } }
-```
-
-```{r}
-# Creating data frame for RM-ANOVA #
-# Constructing time-by-Co2 respiration matrix #
-#time.by.CO2 <- group_by(CO2.m, variable, soil, Treatment) %>% count(value) %>% spread(key = variable, value) 
-
-# Filter to pick plot #
-#resp <- filter(time.by.spec.2, plot_id == 2) %>%
-#  group_by(year, season) %>%
-#  count(wt=n)
-
-#abund$nn <- abund$nn * 4
-
-#abund.ts <- ts(abund$nn, frequency=2, start=c(1977,2))
-
-#plot.ts(abund.ts, type="l", ylab="Rodent Abundance (#/hectare)",
-#        xlab = "Time (year)", las = 1, ylim = c(0, 500))
-
-
-# Plot data #
-#rich.treat.plot <- group_by(rich.treat, plot_type, year) %>% 
-#  summarise (mean = mean(richness), sd = sd(richness), n = n(),
-#             sem = sd/sqrt(n))
-
-#rich.plot <- ggplot(rich.treat.plot, aes(x = year, y = mean, color = plot_type)) +
-#  geom_line(size = 1, show.legend = T) +
-#  geom_errorbar(aes(ymin = mean -sem, ymax = mean + sem), width = 0.1) +
-#  xlim(1977, 2002) +
-#  xlab("Year") +
-#  ylab("Richness") +
-#  scale_color_grey()
-
-#plot(rich.plot)
-```
-
-
 ```{r}
 # Subsetting relevant data from CO2 dataset # 
-CO2.sub <- subset(CO2, plant=="Present" & hour =="48" & soil=="Sterilized", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6))
+CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6))
 
 # Melt data into three columns of treatment, soil and weeks # 
 CO2.m <- melt(CO2.sub)
@@ -282,8 +226,8 @@ rich.cmp <- lme(value ~ variable*Treatment, random = ~ 1 | soil,
 # Next steps: Fix up CO2.m table so that week numbers are factors # 
 
 # Look at detailed output #
-summary(rich.cmp)
-summary(CO2.rm)
+#summary(rich.cmp)
+#summary(CO2.rm)
 
 # Make cleaner ANOVA table #
 set.caption("RMANOVA for soil CO2 respiration")
@@ -293,19 +237,4 @@ pander(anova(rich.cmp))
 set.caption("RMANOVA for soil CO2 respiration")
 pander(anova(CO2.rm))
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

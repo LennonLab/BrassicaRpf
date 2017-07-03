@@ -42,7 +42,7 @@ ttest <- function(reg, coefnum, val){
 
 # 3) Describe and load data set
 
-.shared and .taxonomy file are outputs of alignment and clustering programing mothur. 
+.shared and .taxonomy file are outputs of alignment and clustering programing mothur that was run in IU mason. 
 
 ```{r}
 ## Define Inputs
