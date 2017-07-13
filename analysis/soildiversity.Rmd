@@ -70,7 +70,7 @@ OTU <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
 # Import Taxonomy
 OTU.tax <- read.tax(taxonomy = tax, format = "rdp")
 
-#OTU.tre <- read.tree("../mothur/output/Brassica.bac.rename.tree")
+OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.1")
 ```
 
 # Make Maximum Liklihood tree using Fasttree
@@ -80,21 +80,21 @@ Code below was used to run on Mason at IU to generate
 #!/bin/bash
 #PBS -k o
 #PBS -l nodes=2:ppn=8,vmem=100gb,walltime=5:00:00
-#PBS -M lennonj@indiana.edu
+#PBS -M vkuo@iu.edu
 #PBS -m abe
 #PBS -j oe
 
-module load python/2.7.3
-module load biopython/1.63
-module load fasttree/2.1.1
+#module load python/2.7.3
+#module load biopython/1.63
+#module load fasttree/2.1.1
 
-cd /N/dc2/projects/Lennon_Sequences/2017BrassicaRpf
+#cd /N/dc2/projects/Lennon_Sequences/2017BrassicaRpf
 
-python name_change.py "Brassica.bac.final.0.03.rep.fasta" "Brassica.bac.final.0.03.rep.rename.fasta"
+#python name_change.py "Brassica.bac.final.0.03.rep.fasta" "Brassica.bac.final.0.03.rep.rename.fasta"
 
-fasttree -gtr -nt -gamma -fastest Brassica.bac.final.0.03.rep.rename.fasta > Brassica.bac.rename.tree
+#fasttree -gtr -nt -gamma -fastest Brassica.bac.final.0.03.rep.rename.fasta > Brassica.bac.rename.tree
 
-# Output: 
+# Output: Brassica.bac.rename.tree.1
 ```
 
 
@@ -127,7 +127,7 @@ min.good.c <- min(goods.c.Brassica) # 0.96
 
 # 5) Alpha diversity
 
-## Calculate Alpha diversity using Resampling
+## Calculate Taxonomic Alpha diversity using Resampling
 
 ```{r}
 # Mario's resampling code to estimate alpha diversity (used if run.all = T)
@@ -213,6 +213,53 @@ summary(even.anova.d)
 TukeyHSD(even.anova.d)
 
 # Results: Rpf treatment did not affect evenness of active (p=0.316) or total community (p=0.865).
+```
+
+## Phylogenetic alpha diversity with Rpf treatment 
+
+```{r}
+# Test if all OTUs are in tree
+sum(colnames(OTU) %in% OTU.tre$tip.label) == length(colnames(OTU) %in% OTU.tre$tip.label)
+
+# Root Tree if Needed
+is.rooted(OTU.tre)
+OTU.tre.rooted <- midpoint(OTU.tre)
+
+# Run 
+if (run.all == TRUE){
+  OTU.2 <- rrarefy(OTU, 30000)
+  OTU.2 <- OTU.2[,which(colSums(OTU.2) > 0)]
+  OTU.tre.2 <- prune.sample(OTU.2, OTU.tre.rooted)
+
+  # Calculate Faith's D
+  Brassica.pd <- pd(OTU.2, OTU.tre.2, include.root = F)
+
+  # Write output to files
+  write.table(Brassica.pd, "../data/phylo.txt", sep = "\t",
+              col.names = T, row.names = T)
+}
+
+# Read in alpha diversity files from above
+Brassica.pd2 <- read.table("../data/phylo.txt", sep = "\t")
+
+# Make new dataframe merging design file and phylo diversity
+Brassica.phylo <- data.frame(design[sort(row.names(design)), ],
+                         pd = Brassica.pd2$PD)
+
+# Take averages of technial reps
+pd.rep.ave <- ddply(Brassica.phylo, .(env, treat, qPCR.match),
+                      summarize, phylo = mean(pd))
+
+# Reshape data
+phylo.2 <- reshape(pd.rep.ave[,1:4], timevar = "treat",
+                   idvar = c("qPCR.match", "env"), direction = "wide")
+
+# Calcualte means +/- SEM of control and treated richness
+phylo.2.ag.mean.control <- aggregate(phylo.C ~ env, phylo.2, mean)
+phylo.2.ag.sem.control <- aggregate(phylo.C ~ env, phylo.2, sem)
+phylo.2.ag.mean.treatment <- aggregate(phylo.E ~ env, phylo.2, mean)
+phylo.2.ag.sem.treatment <- aggregate(phylo.E ~ env, phylo.2, sem)
+
 ```
 
 # 6) Beta Diversity
@@ -359,6 +406,61 @@ Treatment <- c(rep("Active Rpf-", 5), rep("Active Rpf+", 5),rep("Total Rpf-", 5)
 indval <- multipatt(OTU, cluster = Treatment, func = "IndVal.g", control = how(nperm=999))
 
 ```
+
+
+## Phylogenetic beta-diversity
+
+```{r}
+phylo.dist <- read.delim("../phylo/Brassica.bac.rename.tree.21.weighted.phylip.dist",
+                         skip = 1, row.names = 1, header = F, strip.white = T)
+
+phylo.dist <- as.dist(phylo.dist)
+
+# Principal Coordinates Analysis (PCoA)
+Brassica.phylo.PCoA <- cmdscale(phylo.dist, eig = TRUE, k = 3)
+explainvar1 <- round(Brassica.phylo.PCoA$eig[1] /
+                       sum(Brassica.phylo.PCoA$eig), 3) * 100
+explainvar2 <- round(Brassica.phylo.PCoA$eig[2] /
+                       sum(Brassica.phylo.PCoA$eig), 3) * 100
+explainvar3 <- round(Brassica.phylo.PCoA$eig[3] /
+                       sum(Brassica.phylo.PCoA$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+# OTU Scores
+otu.scores <- t(cor(Brassica.phylo.PCoA$points, OTU.REL))
+otu.scores <- as.matrix(otu.scores)[,1:2]
+otu.scores <- otu.scores[abs(otu.scores[,1]) > 0.7|
+                           abs(otu.scores[,2]) > 0.7,]
+
+# Average UniFrac Distance Between Treatments
+Brassica.phylo.m <- as.matrix(phylo.dist)
+all.equal(row.names(Brassica.div), rownames(Brassica.phylo.m))
+
+pair.div <- unique(Brassica.div$pair)
+pair.dis <- rep(NA, length(pair.div))
+for(i in 1:length(pair.div)){
+  temp <- row.names(Brassica.div[Brassica.div$pair == pair.div[i], ])
+  pair.dis[i] <- Brassica.phylo.m[temp[1], temp[2]]
+}
+
+mean(pair.dis)
+
+# Average BC Distance Between Replicates
+reps <- names(which(table(Brassica.div$qPCR.match) == 4))
+reps.dis <- rep(NA, length(reps))
+
+for(i in 1:length(reps)){
+  temp <- Brassica.div[Brassica.div$qPCR.match == reps[i] & Brassica.div$treat == "C", ]
+  temp.names <- row.names(temp)
+  reps.dis[i] <- Brassica.phylo.m[temp.names[1], temp.names[2]]
+}
+mean(reps.dis)
+
+t.test(pair.dis, reps.dis)
+
+```
+
+
 
 
 
