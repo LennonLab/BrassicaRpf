@@ -1,7 +1,7 @@
 ---
 title: "BrassicaProductivity"
 author: "Venus Kuo"
-date: "July 03, 2017"
+date: "August 19, 2017"
 output: pdf_document
 ---
 
@@ -194,19 +194,19 @@ plant.m <- melt(plant.sub.ab)
 plant.m.means <- ddply(plant.m, c("Treatment", "variable"), summarise, mean=mean(value))
 
 # Plotting stacked bar graph # 
-live.biomass.stacked.bar <- ggplot(plant.m.means, aes(x = Treatment, y = mean, fill = variable)) + 
-  geom_bar(width=0.5, colour="black", size=1.5, stat = "identity")
+live.biomass.bar <- ggplot(plant.m.means, aes(x = Treatment, y = mean, fill = variable)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)
 
 plant.m.sub <- subset(plant.m, variable == "bbiomass")
 
 # Calculating standard error of means for total plant biomass #
-plantmeans.sem <- ddply(plant.m.sub, c("Treatment", "variable"), summarise,
+plantmeans.sem <- ddply(plant.m, c("Treatment", "variable"), summarise,
                    mean=mean(value), sem=sd(value)/sqrt(length(value)))
 plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
 
 # Plotting stacked bargraph # 
-live.biomass.stacked.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0), data=plantmeans.sem, width = 0.2, size=1.5) +
+live.biomass.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1.5) +
   labs(x="Treatment", y="Plant biomass (g)") +
   theme_classic() +
   scale_fill_manual(values=c("White", "Grey")) +
@@ -220,7 +220,7 @@ live.biomass.stacked.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18))+
-  annotate("text", x =0.55, y=1.9, label = c("B"), size=12)
+  annotate("text", x =0.55, y=1.1, label = c("B"), size=12)
 ```
 
 # 7) Does Rpf treatment affect total and belowground biomass? 
@@ -246,6 +246,11 @@ TukeyHSD(total.live.aov)
 # One factor ANOVA for live soil only showed that Rpf treatment had a strong effect on total biomass p = 0.0132, 
 #post-hoc t-test showed that Rpf treatment decreased biomass 0.6485, which is approximately a 33% reducting in total biomass between Rpf- and Rpf+ treatment. 
 
+
+ratiobiomass.aov <- anova(lm(value~variable*Treatment ,data=plant.m ))
+ratiobiomass.aov
+summary(ratiobiomass.aov)
+TukeyHSD(abiomass.aov)
 
 # Belowground biomass # 
 # Two-factor ANOVA for belowground biomass changes with soil type and treatment # 

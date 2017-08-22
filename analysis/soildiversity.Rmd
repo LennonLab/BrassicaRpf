@@ -185,6 +185,43 @@ even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
 # Mean richness for total and Rpf- communities is 3236.336, evenness is 0.0564
 ```
 
+## Richness barplot 
+
+```{r}
+# Calculate biomass means and standard errors of the means # 
+rich.cDNA.means.sem <- ddply(rich.2, c("treatment"), summarise,
+                   mean=mean(rich.cDNA), sem=sd(rich.cDNA)/sqrt(length(rich.cDNA)))
+rich.cDNA.means.sem <- transform(rich.cDNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+rich.DNA.means.sem <- ddply(rich.2, c("treatment"), summarise,
+                   mean=mean(rich.DNA), sem=sd(rich.DNA)/sqrt(length(rich.DNA)))
+rich.DNA.means.sem <- transform(rich.DNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+rich.means <- rbind(rich.DNA.means.sem,rich.cDNA.means.sem)
+rich.means$Community <- c("DNA", "DNA", "cDNA", "cDNA")
+
+# Bargraph #
+rich.barplot<- ggplot(rich.means, aes(x=Community,y = mean, fill=treatment)) + 
+  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Clean Bargraph figure #
+rich.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=rich.means, width = 0.2, size=1) +
+  labs(x="Community Type", y="Richness") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
+```
+
 ## Richness: differences among treatment?
 
 ```{r}
@@ -201,6 +238,44 @@ TukeyHSD(rich.anova.d)
 # Total community richness was not significantly affected by Rpf treatment p=0.33, evenness p=0.865
 ```
 
+## Evenness barplot 
+
+```{r}
+# Calculate biomass means and standard errors of the means # 
+even.cDNA.means.sem <- ddply(even.2, c("treatment"), summarise,
+                   mean=mean(even.cDNA), sem=sd(even.cDNA)/sqrt(length(even.cDNA)))
+even.cDNA.means.sem <- transform(even.cDNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+even.DNA.means.sem <- ddply(even.2, c("treatment"), summarise,
+                   mean=mean(even.DNA), sem=sd(even.DNA)/sqrt(length(even.DNA)))
+even.DNA.means.sem <- transform(even.DNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+even.means <- rbind(even.DNA.means.sem,even.cDNA.means.sem)
+even.means$Community <- c("DNA", "DNA", "cDNA", "cDNA")
+
+# Bargraph #
+even.barplot<- ggplot(even.means, aes(x=Community,y = mean, fill=treatment)) + 
+  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Clean Bargraph figure #
+even.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=even.means, width = 0.2, size=1) +
+  labs(x="Community Type", y="Evenness") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
+```
+
+
 ## Evenness: differences among sites?
 
 ```{r}
@@ -214,6 +289,66 @@ TukeyHSD(even.anova.d)
 
 # Results: Rpf treatment did not affect evenness of active (p=0.316) or total community (p=0.865).
 ```
+
+## Calulcate Diversity 
+
+```{r}
+# Observed Richness
+S.obs <- rowSums((OTU > 0) * 1)
+
+# Simpson's Evenness
+SimpE <- function(x = ""){
+  x <- as.data.frame(x)
+  D <- diversity(x, "inv")
+  S <- sum((x > 0) * 1) 
+  E <- (D)/S 
+  return(E)
+}
+simpsE <- round(apply(OTU, 1, SimpE), 2)
+
+# Shannon's Diversity
+H <- function(x = ""){
+  x <- x[x>0]
+  H = 0
+  for (n_i in x){
+    p = n_i / sum(x)
+    H = H - p*log(p) 
+  }
+  return(H)
+}
+
+shan <- round(apply(OTU, 1, H), 2)
+shan2 <- diversity(OTU, index = "shannon")
+
+alpha.div <- cbind(design, S.obs, shan)
+
+# Calculate biomass means and standard errors of the means # 
+div <- ddply(alpha.div, c("treatment", "type"), summarise,
+                   mean=mean(shan), sem=sd(shan)/sqrt(length(shan)))
+div <- transform(div, lower=mean-sem, upper=mean+sem)
+
+# Bargraph #
+div.barplot<- ggplot(div, aes(x=type,y = mean, fill=treatment)) + 
+  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Clean Bargraph figure #
+div.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=div, width = 0.2, size=1) +
+  labs(x="Community Type", y="Shannon Diversity") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
+```
+
 
 ## Phylogenetic alpha diversity with Rpf treatment 
 

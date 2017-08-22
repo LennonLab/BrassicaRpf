@@ -17,7 +17,7 @@ getwd()
 setwd("C:/Users/Venus/Github/BrassicaRpf/data")
 
 # Require or install packages #
-package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander') 
+package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander', 'reshape') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -199,7 +199,7 @@ ggplot(CO2.means, aes(x=variable, y=mean, colour=Treatment, group=Treatment)) +
           axis.title.y = element_text(colour="black",  margin = margin(0,10,0,0)),
           axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
           panel.border = element_rect(linetype = "solid", colour = "black", size=2, fill=NA)) +
-  scale_color_manual(values=c('#999999','#E69F00'))
+  scale_color_manual(values=c('#999999','Black'))
 ```
 
 # 6) Time series analysis of CO2 respiration across growth chamber experiment 
