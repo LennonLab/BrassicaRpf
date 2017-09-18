@@ -14,7 +14,7 @@ output: html_document
 # Set working directory #
 rm(list = ls())
 getwd()
-setwd("C:/Users/Venus/Github/BrassicaRpf/data")
+setwd("~/../Github/BrassicaRpf/data")
 
 # Require or install packages #
 package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander', 'reshape') 
@@ -36,10 +36,10 @@ GCH_CO2.csv : CO2 respiration measurement of growth chamber soil samples for all
 
 ```{r , message=FALSE, warning=FALSE}
 # Set working directory # 
-setwd("C:/Users/Venus/Github/BrassicaRpf/data")
+setwd("~/../Github/BrassicaRpf/data")
 
 # Read csv files # 
-abundance <- read.csv("qPCR.csv", header=T) 
+abundance <- read.csv("qPCR.txt", header=T) 
 # Log transformed and standardized based on soil gram and extracted DNA concentration # 
 
 CO2 <- read.csv("GCH_CO2.csv", header=T)
@@ -47,6 +47,11 @@ CO2 <- read.csv("GCH_CO2.csv", header=T)
 # Define factor levels for bacterial and fungal qPCR data # 
 abundance$Week<- factor(abundance$Week)
 abundance <- na.omit(abundance)
+
+soil <- abundance$Soil
+dna <- abundance$DNA
+abundance$stdGeneCopy <- (abundance$GeneCopy)/soil/dna
+abundance$log10stdGeneCopy <- log10(abundance$stdGeneCopy)
 
 # Define factor levels for microbial soil respiration data # 
 ```
@@ -58,12 +63,14 @@ Two-factor ANOVA testing the effect of Rpf treatment and week number (1 or 6) on
 qPCR gene copy abundances as a metric for fungal (ITS) abundance 
 Two-factor ANOVA testing the effect of Rpf treatment and week number (1 or 6) on fungal soil abundance.
 
+## Bacterial gene copy abundance standardized by soil amount and DNA extracted
+
 ```{r}
 # Subset bacterial 16S dataset # 
-bac.abundance <- subset(abundance, Gene=="16S rRNA" , select=c(Treatment, Week, Std.Gene.Copy))
+bac.abundance <- subset(abundance, Gene=="16S rRNA" , select=c(Treatment, Week, stdGeneCopy))
 
 # Bacterial abundance: 16S rRNA gene copy abundance # 
-bac.means <- ddply(bac.abundance, c("Treatment", "Week"), summarise, mean=mean(Std.Gene.Copy))
+bac.means <- ddply(bac.abundance, c("Treatment", "Week"), summarise, mean=mean(stdGeneCopy))
 
 # Barplot of bacterial gene abundance in soil # 
 bac.means.barplot <- ggplot(bac.means, aes(x=Week,y = mean, fill=Treatment)) + 
@@ -71,34 +78,39 @@ bac.means.barplot <- ggplot(bac.means, aes(x=Week,y = mean, fill=Treatment)) +
 
 # Calculate bacterial gene abundance standard errors of the means # 
 bac.means.sem <- ddply(bac.abundance, c("Treatment", "Week"), summarise,
-                   mean=mean(Std.Gene.Copy), sem=sd(Std.Gene.Copy)/sqrt(length(Std.Gene.Copy)))
+                   mean=mean(stdGeneCopy), sem=sd(stdGeneCopy)/sqrt(length(stdGeneCopy)))
 bac.means.sem <- transform(bac.means.sem, lower=mean-sem, upper=mean+sem)
 
 # Barplot of bacterial gene abundance in soil for pub figures # 
 bac.means.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0.65), data=bac.means.sem, width = 0.2, size=1.5) +
-  labs(x="Week", y="Bacteria 16S rRNA gene copy abundances") +
+                              position=position_dodge(0.65), data=bac.means.sem, width = 0.2, size=1) +
+  labs(x="Week of growth chamber experiment", y="16S rRNA gene copy number/Soil (g)") +
   theme_classic() +
   scale_fill_manual(values=c("Black", "White")) +
-  theme(axis.text.y=element_text(colour="black", size=14),
-        axis.text.x=element_text(colour="black", size =14),
-        axis.title=element_text(size=14),
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =16),
+        axis.title=element_text(size=16),
         axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
-        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        axis.title.x = element_text(colour="black",margin=margin(15,0,0,0)),
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.55, y=4000, label = c("A"), size=12)
+  annotate("text", x =0.60, y=75000, label = c("A"), size=12)
+
+```
 
 
+## Fungal ITS gene copy abundance standardized by soil amount and DNA extracted
+
+```{r}
 # Fungal ITS # 
 # Subset ITS gene copy data # 
-ITS.abundance <- subset(abundance, Gene=="ITS" , select=c(Treatment, Week, Std.Gene.Copy))
+ITS.abundance <- subset(abundance, Gene=="ITS" , select=c(Treatment, Week, stdGeneCopy))
 
 # Fungal abundance: ITS gene copy abundance # 
-ITS.means <- ddply(ITS.abundance, c("Treatment", "Week"), summarise, mean=mean(Std.Gene.Copy))
+ITS.means <- ddply(ITS.abundance, c("Treatment", "Week"), summarise, mean=mean(stdGeneCopy))
 
 # Barplot of Fungal ITS abundance in soil # 
 ITS.mean.barplot<- ggplot(ITS.means, aes(x=Week,y = mean, fill=Treatment)) +
@@ -106,28 +118,28 @@ ITS.mean.barplot<- ggplot(ITS.means, aes(x=Week,y = mean, fill=Treatment)) +
 
 # Calculate fungal ITS gene abundance standard errors of the means # 
 ITS.means.sem <- ddply(ITS.abundance, c("Treatment", "Week"), summarise,
-                   mean=mean(Std.Gene.Copy), sem=sd(Std.Gene.Copy)/sqrt(length(Std.Gene.Copy)))
+                   mean=mean(stdGeneCopy), sem=sd(stdGeneCopy)/sqrt(length(stdGeneCopy)))
 
 ITS.means.sem <- transform(ITS.means.sem, lower=mean-sem, upper=mean+sem)
 
 # Barplot of fungal gene abundance in soil for pub figures # 
 ITS.mean.barplot + 
   geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
-                data=ITS.means.sem, width = 0.2, size=1.5) +
-  labs(x="Week", y="Fungal ITS gene copy abundances") +
+                data=ITS.means.sem, width = 0.2, size=1) +
+  labs(x="Week of growth chamber experiment", y="ITS gene copy number/Soil (g)") +
   theme_classic() +
   scale_fill_manual(values=c("Black", "White")) +
-  theme(axis.text.y=element_text(colour="black", size=18),
-        axis.text.x=element_text(colour="black", size =18),
-        axis.title=element_text(size=15),
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =16),
+        axis.title=element_text(size=16),
         axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
-        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        axis.title.x = element_text(colour="black",margin=margin(15,0,0,0)),
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.55, y=23000, label = c("B"), size=12)
+  annotate("text", x =0.55, y=1000000, label = c("B"), size=12)
 ```
 
 # 5) Does Rpf treatment affect Bacterial and fungal gene copy abundances?
@@ -135,7 +147,7 @@ ITS.mean.barplot +
 ```{r}
 # Bacterial 16S rRNA # 
 # Two Factor ANOVA of 16S rRNA bacterial gene copy abundances affected by Treatment and week of growth chamber experiment # 
-bac.aov <- anova(lm(Std.Gene.Copy ~ Treatment*Week, data=bac.abundance))
+bac.aov <- anova(lm(stdGeneCopy ~ Treatment*Week, data=bac.abundance))
 bac.aov
 # Results: Rpf application to potted soil significantly (p<0.005) reduces bacterial 16S rRNA gene copy numbers # 
 # Gene copy number increases significantly over the 6 week growth chamber experiment # 
@@ -143,7 +155,7 @@ bac.aov
 
 # Fungal ITS # 
 # Two Factor ANOVA of ITS Fungal gene copy abundances affected by Treatment and week of growth chamber experiment # 
-ITS.aov <- anova(lm(Std.Gene.Copy ~ Treatment*Week, data=ITS.abundance))
+ITS.aov <- anova(lm(stdGeneCopy ~ Treatment*Week, data=ITS.abundance))
 ITS.aov
 # Results: Rpf application to potted soil significantly (p<0.005) reduces bacterial 16S rRNA gene copy numbers # 
 # Gene copy number increases significantly over the 6 week growth chamber experiment # 
@@ -157,8 +169,12 @@ ITS.aov
 # Subsetting relevant data from CO2 dataset # 
 CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6))
 
+# Change column names # 
+colnames(CO2.sub) <- c("Treatment", "soil", "1","2","3","4","5","6")
+
 # Melt data into three columns of treatment, soil and weeks # 
 CO2.m <- melt(CO2.sub)
+CO2.m$variable <- as.factor(CO2.m$variable)
 
 # Summarizing data # 
 CO2.means <- ddply(CO2.m, c("Treatment", "variable"), summarise, mean=mean(value))
@@ -184,7 +200,7 @@ ggplot(CO2.means, aes(x=variable, y=mean, colour=Treatment, group=Treatment)) +
                 data=CO2.means.sem, width = 0.2, size=1) +
     geom_line(position=pd, size=1.5) +
     geom_point(position=pd, size=5, shape=21, fill="white") + # 21 is filled circle
-    xlab("Growth chamber experiment weeks") +
+    xlab("Week of growth chamber experiment") +
     ylab("Soil CO2 respiration (ppm)") +
     scale_colour_hue(name="Treatment",    # Legend label, use darker colors
                      #breaks=c("Rpf-", "Rpf+"),
