@@ -22,7 +22,7 @@ source("C:/Users/Venus/GitHub/BrassicaRpf/bin/MothurTools.R")
 source("C:/Users/Venus/GitHub/BrassicaRpf/bin/phylodiversity2.R")
 
 # Load dependencies # 
-package.list <- c('vegan', 'plyr' , 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn', 'indicspecies', 'viridis' ,  'BiodiversityR') 
+package.list <- c('vegan', 'plyr' , 'ggplot2', 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn', 'indicspecies', 'viridis' ,  'BiodiversityR') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -472,7 +472,7 @@ abline(h = 0, v = 0, lty = 3)
 box(lwd = 2)
 
 mtext(side = 3, "Taxonomic PCoA", line = 1.5, cex = 1)
-text("a", x = -0.48, y = 0.38, font = 2, cex = 1.8)
+#text("a", x = -0.48, y = 0.38, font = 2, cex = 1.8)
 
 # Subset data
 Brassica.div.sort <- Brassica.div[order(Brassica.div[,1]) ,]

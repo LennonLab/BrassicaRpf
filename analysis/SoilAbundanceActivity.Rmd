@@ -17,7 +17,7 @@ getwd()
 setwd("~/../Github/BrassicaRpf/data")
 
 # Require or install packages #
-package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander', 'reshape') 
+package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander', 'reshape', 'nlme') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -97,7 +97,7 @@ bac.means.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.60, y=75000, label = c("A"), size=12)
+  annotate("text", x =0.55, y=77500, label = c("a"), size=12)
 
 ```
 
@@ -139,7 +139,7 @@ ITS.mean.barplot +
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.55, y=1000000, label = c("B"), size=12)
+  annotate("text", x =0.55, y=1000000, label = c("b"), size=12)
 ```
 
 # 5) Does Rpf treatment affect Bacterial and fungal gene copy abundances?
@@ -176,12 +176,16 @@ colnames(CO2.sub) <- c("Treatment", "soil", "1","2","3","4","5","6")
 CO2.m <- melt(CO2.sub)
 CO2.m$variable <- as.factor(CO2.m$variable)
 
+# Standardizing the y-axis units by 24 hours # 
+CO2.values <- CO2.m$value
+CO2.m$StdCO2 <- CO2.values/24
+
 # Summarizing data # 
-CO2.means <- ddply(CO2.m, c("Treatment", "variable"), summarise, mean=mean(value))
+CO2.means <- ddply(CO2.m, c("Treatment", "variable"), summarise, mean=mean(StdCO2))
 
 # Calculating standard error of the means # 
 CO2.means.sem <- ddply(CO2.m, c("Treatment", "variable"), summarise,
-                   mean=mean(value), sem=sd(value)/sqrt(length(value)))
+                   mean=mean(StdCO2), sem=sd(StdCO2)/sqrt(length(StdCO2)))
 
 CO2.means.sem <- transform(CO2.means.sem, lower=mean-sem, upper=mean+sem)
 
@@ -201,7 +205,7 @@ ggplot(CO2.means, aes(x=variable, y=mean, colour=Treatment, group=Treatment)) +
     geom_line(position=pd, size=1.5) +
     geom_point(position=pd, size=5, shape=21, fill="white") + # 21 is filled circle
     xlab("Week of growth chamber experiment") +
-    ylab("Soil CO2 respiration (ppm)") +
+    ylab("Soil CO2 respiration (ppm)/ 24 hr") +
     scale_colour_hue(name="Treatment",    # Legend label, use darker colors
                      #breaks=c("Rpf-", "Rpf+"),
                      labels=c("Rpf-", "Rpf+"),
@@ -224,10 +228,10 @@ Perform RM-ANOVA on CO2 respiration dataset.
 
 ```{r}
 # Subsetting relevant data from CO2 dataset # 
-CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6))
+#CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, #Week.3, Week.4, Week.5, Week.6))
 
 # Melt data into three columns of treatment, soil and weeks # 
-CO2.m <- melt(CO2.sub)
+#CO2.m <- melt(CO2.sub)
 
 
 # Perform RM-ANOVA #   

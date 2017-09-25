@@ -81,7 +81,7 @@ seed.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.575, y=67, label = c("A"), size=12)
+  annotate("text", x =0.575, y=67, label = c("a"), size=12)
 
 
 # Flower Production # 
@@ -113,8 +113,9 @@ flower.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.575, y=10.8, label = c("B"), size=12)
+  annotate("text", x =0.575, y=10.8, label = c("b"), size=12)
 ```
+
 
 # 5) Does Rpf treatment and soil type affect plant reproductive fitness?
 
@@ -181,7 +182,7 @@ plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.575, y=2.1, label = c("A"), size=12)
+  annotate("text", x =0.575, y=2.1, label = c("a"), size=12)
 
 
 
@@ -222,7 +223,7 @@ live.biomass.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18))+
-  annotate("text", x =0.55, y=1.05, label = c("B"), size=12)
+  annotate("text", x =0.55, y=1.1, label = c("b"), size=12)
 ```
 
 # 7) Does Rpf treatment affect total and belowground biomass? 
@@ -233,11 +234,11 @@ Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment
 ```{r}
 # Total biomass # 
 # Two-factor ANOVA of total biomass with treatment and soil type # 
-plant.t.aov <- anova(lm(total.biomass ~ Treatment, data=plantfitness))
-plant.t.aov
+#plant.t.aov <- anova(lm(total.biomass ~ Treatment, data=plantfitness))
+#plant.t.aov
 # Test of normality # 
-qqnorm(plantfitness$total.biomass)
-shapiro.test(plantfitness$total.biomass)
+#qqnorm(plantfitness$total.biomass)
+#shapiro.test(plantfitness$total.biomass)
 # Results: p = 0.06, data is normal # 
 
 # One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
@@ -249,15 +250,15 @@ TukeyHSD(total.live.aov)
 #post-hoc t-test showed that Rpf treatment decreased biomass 0.6485, which is approximately a 33% reducting in total biomass between Rpf- and Rpf+ treatment. 
 
 
-ratiobiomass.aov <- anova(lm(value~variable*Treatment ,data=plant.m ))
-ratiobiomass.aov
-summary(ratiobiomass.aov)
-TukeyHSD(abiomass.aov)
+#ratiobiomass.aov <- anova(lm(value~variable*Treatment ,data=plant.m ))
+#ratiobiomass.aov
+#summary(ratiobiomass.aov)
+#TukeyHSD(abiomass.aov)
 
 # Belowground biomass # 
 # Two-factor ANOVA for belowground biomass changes with soil type and treatment # 
-bbiomass.aov <- anova(lm(bbiomass ~ Treatment, data=plantfitness))
-bbiomass.aov
+#bbiomass.aov <- anova(lm(bbiomass ~ Treatment, data=plantfitness))
+#bbiomass.aov
 # One-factor ANOVA for belowground biomass changes with treatment # 
 bbiomass.aov <- aov(bbiomass ~ Treatment, data=plantfitness)
 summary(bbiomass.aov)
@@ -266,8 +267,8 @@ TukeyHSD(bbiomass.aov)
 
 # Aboveground biomass # 
 # Two-factor ANOVA for above ground biomass # 
-abiomass.aov <- anova(lm(abiomass ~ Treatment*soil, data=plantfitness))
-abiomass.aov
+#abiomass.aov <- anova(lm(abiomass ~ Treatment*soil, data=plantfitness))
+#abiomass.aov
 
 abiomass.aov <- aov(abiomass ~ Treatment, data=plantfitness)
 summary(abiomass.aov)
