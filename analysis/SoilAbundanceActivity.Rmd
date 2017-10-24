@@ -50,7 +50,7 @@ abundance <- na.omit(abundance)
 
 soil <- abundance$Soil
 dna <- abundance$DNA
-abundance$stdGeneCopy <- (abundance$GeneCopy)/soil/dna
+abundance$stdGeneCopy <- (abundance$GeneCopy)/soil#/dna
 abundance$log10stdGeneCopy <- log10(abundance$stdGeneCopy)
 
 # Define factor levels for microbial soil respiration data # 
@@ -97,7 +97,7 @@ bac.means.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.55, y=77500, label = c("a"), size=12)
+  annotate("text", x = 0.55, y = 1750000, label = c("a"), size=12) 
 
 ```
 
@@ -139,7 +139,7 @@ ITS.mean.barplot +
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.55, y=1000000, label = c("b"), size=12)
+  annotate("text", x =0.55, y=2500000, label = c("b"), size=12)
 ```
 
 # 5) Does Rpf treatment affect Bacterial and fungal gene copy abundances?
@@ -159,6 +159,35 @@ ITS.aov <- anova(lm(stdGeneCopy ~ Treatment*Week, data=ITS.abundance))
 ITS.aov
 # Results: Rpf application to potted soil significantly (p<0.005) reduces bacterial 16S rRNA gene copy numbers # 
 # Gene copy number increases significantly over the 6 week growth chamber experiment # 
+
+CO2.m <- melt(bac.abundance)
+CO2.m$variable <- as.factor(CO2.m$variable)
+
+CO2.rm <- lme(value ~ Week*Treatment, random = ~ 1 | variable,
+              correlation = corAR1(form = ~1 | variable), 
+              data = CO2.m)
+
+rich.cmp <- lme(value ~ Week*Treatment, random = ~ 1 | variable,
+                correlation = corCompSymm(form = ~1 | variable),
+                data = CO2.m)
+set.caption("RMANOVA for soil CO2 respiration")
+pander(anova(rich.cmp))
+
+
+
+CO2.m <- melt(ITS.abundance)
+CO2.m$variable <- as.factor(CO2.m$variable)
+
+CO2.rm <- lme(value ~ Week*Treatment, random = ~ 1 | variable,
+              correlation = corAR1(form = ~1 | variable), 
+              data = CO2.m)
+
+rich.cmp <- lme(value ~ Week*Treatment, random = ~ 1 | variable,
+                correlation = corCompSymm(form = ~1 | variable),
+                data = CO2.m)
+set.caption("RMANOVA for soil CO2 respiration")
+pander(anova(rich.cmp))
+
 ```
 
 # 6) Visualization of microbial activity in soil 

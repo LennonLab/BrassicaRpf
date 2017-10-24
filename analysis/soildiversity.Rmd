@@ -220,6 +220,9 @@ rich.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 1.5),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18))
+
+
+
 ```
 
 ## Richness: differences among treatment?
@@ -354,46 +357,46 @@ div.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
 
 ```{r}
 # Test if all OTUs are in tree
-sum(colnames(OTU) %in% OTU.tre$tip.label) == length(colnames(OTU) %in% OTU.tre$tip.label)
+#sum(colnames(OTU) %in% OTU.tre$tip.label) == length(colnames(OTU) %in% OTU.tre$tip.label)
 
 # Root Tree if Needed
-is.rooted(OTU.tre)
-OTU.tre.rooted <- midpoint(OTU.tre)
+#is.rooted(OTU.tre)
+#OTU.tre.rooted <- midpoint(OTU.tre)
 
 # Run 
-if (run.all == TRUE){
-  OTU.2 <- rrarefy(OTU, 30000)
-  OTU.2 <- OTU.2[,which(colSums(OTU.2) > 0)]
-  OTU.tre.2 <- prune.sample(OTU.2, OTU.tre.rooted)
+#if (run.all == TRUE){
+#  OTU.2 <- rrarefy(OTU, 30000)
+#  OTU.2 <- OTU.2[,which(colSums(OTU.2) > 0)]
+#  OTU.tre.2 <- prune.sample(OTU.2, OTU.tre.rooted)
 
   # Calculate Faith's D
-  Brassica.pd <- pd(OTU.2, OTU.tre.2, include.root = F)
+#  Brassica.pd <- pd(OTU.2, OTU.tre.2, include.root = F)
 
   # Write output to files
-  write.table(Brassica.pd, "../data/phylo.txt", sep = "\t",
-              col.names = T, row.names = T)
-}
+#  write.table(Brassica.pd, "../data/phylo.txt", sep = "\t",
+#              col.names = T, row.names = T)
+#}
 
 # Read in alpha diversity files from above
-Brassica.pd2 <- read.table("../data/phylo.txt", sep = "\t")
+#Brassica.pd2 <- read.table("../data/phylo.txt", sep = "\t")
 
 # Make new dataframe merging design file and phylo diversity
-Brassica.phylo <- data.frame(design[sort(row.names(design)), ],
-                         pd = Brassica.pd2$PD)
+#Brassica.phylo <- data.frame(design[sort(row.names(design)), ],
+#                         pd = Brassica.pd2$PD)
 
 # Take averages of technial reps
-pd.rep.ave <- ddply(Brassica.phylo, .(env, treat, qPCR.match),
-                      summarize, phylo = mean(pd))
+#pd.rep.ave <- ddply(Brassica.phylo, .(env, treat, qPCR.match),
+#                      summarize, phylo = mean(pd))
 
 # Reshape data
-phylo.2 <- reshape(pd.rep.ave[,1:4], timevar = "treat",
-                   idvar = c("qPCR.match", "env"), direction = "wide")
+#phylo.2 <- reshape(pd.rep.ave[,1:4], timevar = "treat",
+#                   idvar = c("qPCR.match", "env"), direction = "wide")
 
 # Calcualte means +/- SEM of control and treated richness
-phylo.2.ag.mean.control <- aggregate(phylo.C ~ env, phylo.2, mean)
-phylo.2.ag.sem.control <- aggregate(phylo.C ~ env, phylo.2, sem)
-phylo.2.ag.mean.treatment <- aggregate(phylo.E ~ env, phylo.2, mean)
-phylo.2.ag.sem.treatment <- aggregate(phylo.E ~ env, phylo.2, sem)
+#phylo.2.ag.mean.control <- aggregate(phylo.C ~ env, phylo.2, mean)
+#phylo.2.ag.sem.control <- aggregate(phylo.C ~ env, phylo.2, sem)
+#phylo.2.ag.mean.treatment <- aggregate(phylo.E ~ env, phylo.2, mean)
+#phylo.2.ag.sem.treatment <- aggregate(phylo.E ~ env, phylo.2, sem)
 
 ```
 
@@ -493,16 +496,16 @@ Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
 # Add points
 # Active community Rpf+
 points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
-       cex = 2, col = "red", bg = "white", lwd = 2)
+       cex = 2, col = "black", bg = "white", lwd = 2)
 # Active community Rpf-
 points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
-       cex = 2, col = "red", bg = "red", lwd = 2)   
+       cex = 2, col = "black", bg = "red", lwd = 2)   
 # Total community Rpf+ 
 points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 22,
-       cex = 2, col = "darkgreen", bg = "white", lwd = 2)
+       cex = 2, col = "black", bg = "white", lwd = 2)
 # Total community Rpf-
 points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 22,
-       cex = 2, col = "darkgreen", bg = "darkgreen", lwd = 2)
+       cex = 2, col = "black", bg = "darkgreen", lwd = 2)
 
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
@@ -510,7 +513,7 @@ plot.new()
 legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pch = c(21, 21, 22, 22),
        pt.bg = c("white", "red", "white", "darkgreen"),
-       bty = "n", y.intersp = 1.5, cex = 1.25)
+       bty = "n", y.intersp = 2, cex = 1.5)
 ```
 
 # Beta diversity hypothesis testing 
@@ -523,7 +526,7 @@ all.equal(row.names(Brassica.div), row.names(OTU.REL.log))
 
 # Run PERMANOVA with adonis function # 
 Brassica.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
-                         method = "bray", binary = FALSE, permutations = 999)
+                         method = "bray", binary = TRUE, permutations = 9999)
 Brassica.permanova
 
 Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")

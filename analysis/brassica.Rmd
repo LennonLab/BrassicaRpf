@@ -68,7 +68,7 @@ seed.mean.sem <- transform(seed.mean.sem, lower=mean-sem, upper=mean+sem)
 # Plotting bar graph with standard error #
 seed.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
                               position=position_dodge(0.65), data=seed.mean.sem, width = 0.2, size = 1) +
-  labs(x="Soil type", y="Number of seeds produced") +
+  labs(y="Number of seeds produced") +
   scale_fill_manual(values=c("Black", "White")) +
   theme_classic() +
   theme(axis.text.y=element_text(colour="black", size=18),
@@ -100,7 +100,7 @@ flower.mean.sem <- transform(flower.mean.sem, lower=mean-sem, upper=mean+sem)
 # Plotting bar graph with standard error #
 flower.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
                               position=position_dodge(.65), data=flower.mean.sem, width = 0.2, size=1) +
-  labs(x="Soil type", y="Number of flowers produced") +
+  labs( y="Number of flowers produced") +
   theme_classic() +
   scale_fill_manual(values=c("Black", "White")) +
   theme(axis.text.y=element_text(colour="black", size=18),
@@ -114,6 +114,8 @@ flower.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
   annotate("text", x =0.575, y=10.8, label = c("b"), size=12)
+
+
 ```
 
 
@@ -129,7 +131,7 @@ seed.aov
 plant.sub <- subset(plantfitness, soil=="Live")
 
 # One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
-seed.live.aov <- aov(seed.count ~ Treatment, data=plantfitness)
+seed.live.aov <- aov(seed.count ~ Treatment, data=plant.sub)
 summary(seed.live.aov)
 TukeyHSD(seed.live.aov)
 
@@ -143,6 +145,8 @@ flower.live.aov <- aov(flower.count ~ Treatment, data=plant.sub)
 summary(flower.live.aov)
 TukeyHSD(flower.live.aov)
 # Results: Rpf treatment did not affect reproductivie fitness. 
+
+
 ```
 
 # 6) Brassica rapa total plant biomass 
@@ -169,7 +173,7 @@ plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
 # Barplot of total plant biomass with sem added # 
 plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
                               position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1) +
-  labs(x="Soil type", y="Total plant biomass (g)") +
+  labs( y="Total plant biomass (g)") +
   theme_classic() +
   scale_fill_manual(values=c("Black", "White")) +
   theme(axis.text.y=element_text(colour="black", size=18),
@@ -224,6 +228,8 @@ live.biomass.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18))+
   annotate("text", x =0.55, y=1.1, label = c("b"), size=12)
+
+
 ```
 
 # 7) Does Rpf treatment affect total and belowground biomass? 
@@ -273,6 +279,8 @@ TukeyHSD(bbiomass.aov)
 abiomass.aov <- aov(abiomass ~ Treatment, data=plantfitness)
 summary(abiomass.aov)
 TukeyHSD(abiomass.aov)
+
+
 ```
 
 
