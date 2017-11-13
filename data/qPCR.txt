@@ -1,0 +1,73 @@
+Type,Organism,Gene,Treatment,Week,Soil,DNA,Rep,Well,GeneCopy
+Live,Bacteria,16S rRNA,Rpf+,1,0.27,29.175,1,B1,114000
+Live,Bacteria,16S rRNA,Rpf+,1,0.27,29.175,1,B2,88861
+Live,Bacteria,16S rRNA,Rpf+,1,0.27,29.175,1,B3,95697
+Live,Bacteria,16S rRNA,Rpf+,1,0.26,27.988,2,B4,132000
+Live,Bacteria,16S rRNA,Rpf+,1,0.26,27.988,2,B5,149000
+Live,Bacteria,16S rRNA,Rpf+,1,0.26,27.988,2,B6,135000
+Live,Bacteria,16S rRNA,Rpf+,1,0.26,26.796,3,B7,146000
+Live,Bacteria,16S rRNA,Rpf+,1,0.26,26.796,3,B8,156000
+Live,Bacteria,16S rRNA,Rpf+,1,0.26,26.796,3,B9,115000
+Live,Bacteria,16S rRNA,Rpf-,1,0.25,23.287,1,B10,203000
+Live,Bacteria,16S rRNA,Rpf-,1,0.25,23.287,1,B11,165000
+Live,Bacteria,16S rRNA,Rpf-,1,0.25,23.287,1,B12,161000
+Live,Bacteria,16S rRNA,Rpf-,1,0.24,32.702,2,C1,178000
+Live,Bacteria,16S rRNA,Rpf-,1,0.24,32.702,2,C2,156000
+Live,Bacteria,16S rRNA,Rpf-,1,0.24,32.702,2,C3,165000
+Live,Bacteria,16S rRNA,Rpf-,1,0.25,17.455,3,C4,329000
+Live,Bacteria,16S rRNA,Rpf-,1,0.25,17.455,3,C5,295000
+Live,Bacteria,16S rRNA,Rpf-,1,0.25,17.455,3,C6,303000
+Live,Bacteria,16S rRNA,Rpf+,6,0.27,29.175,1,C7,327000
+Live,Bacteria,16S rRNA,Rpf+,6,0.27,29.175,1,C8,331000
+Live,Bacteria,16S rRNA,Rpf+,6,0.27,29.175,1,C9,382000
+Live,Bacteria,16S rRNA,Rpf+,6,0.26,27.988,2,C10,396000
+Live,Bacteria,16S rRNA,Rpf+,6,0.26,27.988,2,C11,398000
+Live,Bacteria,16S rRNA,Rpf+,6,0.26,27.988,2,C12,377000
+Live,Bacteria,16S rRNA,Rpf+,6,0.26,26.796,3,D1,193000
+Live,Bacteria,16S rRNA,Rpf+,6,0.26,26.796,3,D2,211000
+Live,Bacteria,16S rRNA,Rpf+,6,0.26,26.796,3,D3,202000
+Live,Bacteria,16S rRNA,Rpf-,6,0.25,23.287,1,D4,272000
+Live,Bacteria,16S rRNA,Rpf-,6,0.25,23.287,1,D5,300000
+Live,Bacteria,16S rRNA,Rpf-,6,0.25,23.287,1,D6,289000
+Live,Bacteria,16S rRNA,Rpf-,6,0.24,32.702,2,D7,500000
+Live,Bacteria,16S rRNA,Rpf-,6,0.24,32.702,2,D8,499000
+Live,Bacteria,16S rRNA,Rpf-,6,0.24,32.702,2,D9,532000
+Live,Bacteria,16S rRNA,Rpf-,6,0.25,17.455,3,D10,402000
+Live,Bacteria,16S rRNA,Rpf-,6,0.25,17.455,3,D11,439000
+Live,Bacteria,16S rRNA,Rpf-,6,0.25,17.455,3,D12,491000
+Live,Fungi,ITS,Rpf+,1,0.27,29.175,1,B1,497000
+Live,Fungi,ITS,Rpf+,1,0.27,29.175,1,B2,668000
+Live,Fungi,ITS,Rpf+,1,0.27,29.175,1,B3,721000
+Live,Fungi,ITS,Rpf+,1,0.26,27.988,2,B4,607000
+Live,Fungi,ITS,Rpf+,1,0.26,27.988,2,B5,676000
+Live,Fungi,ITS,Rpf+,1,0.26,27.988,2,B6,652000
+Live,Fungi,ITS,Rpf+,1,0.26,26.796,3,B7,NA
+Live,Fungi,ITS,Rpf+,1,0.26,26.796,3,B8,NA
+Live,Fungi,ITS,Rpf+,1,0.26,26.796,3,B9,NA
+Live,Fungi,ITS,Rpf-,1,0.25,23.287,1,B10,693000
+Live,Fungi,ITS,Rpf-,1,0.25,23.287,1,B11,588000
+Live,Fungi,ITS,Rpf-,1,0.25,23.287,1,B12,862000
+Live,Fungi,ITS,Rpf-,1,0.24,32.702,2,C1,743000
+Live,Fungi,ITS,Rpf-,1,0.24,32.702,2,C2,749000
+Live,Fungi,ITS,Rpf-,1,0.24,32.702,2,C3,513000
+Live,Fungi,ITS,Rpf-,1,0.25,17.455,3,C4,352000
+Live,Fungi,ITS,Rpf-,1,0.25,17.455,3,C5,356000
+Live,Fungi,ITS,Rpf-,1,0.25,17.455,3,C6,356000
+Live,Fungi,ITS,Rpf+,6,0.27,29.175,1,C7,90200
+Live,Fungi,ITS,Rpf+,6,0.27,29.175,1,C8,62400
+Live,Fungi,ITS,Rpf+,6,0.27,29.175,1,C9,84200
+Live,Fungi,ITS,Rpf+,6,0.26,27.988,2,C10,147000
+Live,Fungi,ITS,Rpf+,6,0.26,27.988,2,C11,137000
+Live,Fungi,ITS,Rpf+,6,0.26,27.988,2,C12,254000
+Live,Fungi,ITS,Rpf+,6,0.26,26.796,3,D1,254000
+Live,Fungi,ITS,Rpf+,6,0.26,26.796,3,D2,152000
+Live,Fungi,ITS,Rpf+,6,0.26,26.796,3,D3,275000
+Live,Fungi,ITS,Rpf-,6,0.25,23.287,1,D4,111000
+Live,Fungi,ITS,Rpf-,6,0.25,23.287,1,D5,14000
+Live,Fungi,ITS,Rpf-,6,0.25,23.287,1,D6,101000
+Live,Fungi,ITS,Rpf-,6,0.24,32.702,2,D7,53000
+Live,Fungi,ITS,Rpf-,6,0.24,32.702,2,D8,84500
+Live,Fungi,ITS,Rpf-,6,0.24,32.702,2,D9,59400
+Live,Fungi,ITS,Rpf-,6,0.25,17.455,3,D10,19000
+Live,Fungi,ITS,Rpf-,6,0.25,17.455,3,D11,76300
+Live,Fungi,ITS,Rpf-,6,0.25,17.455,3,D12,6000

@@ -1,0 +1,123 @@
+---
+title: "nutrient"
+author: "Venus Kuo"
+date: "August 19, 2017"
+output: html_document
+---
+
+# 1) Question: What is the mechanism of Rpf effect on reducing plant productivity?
+
+I measured the concentration of C and N in the soil samples of Rpf- and Rpf+ live soil from week 1 and 6 pots. 
+
+# 2) Set up work environment  
+
+```{r, message=FALSE, warning=FALSE}
+# Setup work enviroment 
+rm(list = ls())
+setwd("~/../Github/BrassicaRpf/data")
+
+# Load dependencies # 
+package.list <- c('vegan', 'ggplot2', 'plyr') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+```
+
+# 3) Describe and load data set
+
+Text file containing the week, treatment, rep number, soil sample amount, and soil N and C amounts.
+
+```{r}
+# Read text file #
+CN <- read.delim("~/../Github/BrassicaRpf/data/CN.txt", sep = ",", head = TRUE)
+
+# Look at data set # 
+str(CN)
+View(CN)
+
+# Remove blank sample last row # 
+CN <- CN[1:15,]
+
+# Week number as factor # 
+CN$Week <- as.factor(CN$Week)
+
+# Calculate ratio of CN # 
+CN$Ratio <- ((CN$Carbon/CN$Nitrogen)/CN$SampleAmount)
+
+# Relativeize the N and C concetration by sample amount # 
+CN$RelN <- (CN$Nitrogen/CN$SampleAmount)*100
+CN$RelC <- (CN$Carbon/CN$SampleAmount)*100
+```
+
+# 4) Plot bargraph 
+
+```{r}
+# Calculate biomass means and standard errors of the means # 
+CN.means.sem <- ddply(CN, c("Treatment", "Week"), summarise,
+                   mean=mean(RelN), sem=sd(RelN)/sqrt(length(RelN)))
+CN.means.sem <- transform(CN.means.sem, lower=mean-sem, upper=mean+sem)
+
+# Bargraph #
+CN.barplot<- ggplot(CN.means.sem, aes(x=Week,y = mean, fill=Treatment)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Clean Bargraph figure #
+CN.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=CN.means.sem, width = 0.2, size=1) +
+  labs(x="Week of Growth Chamber Experiment", y="Soil Nitrogen (mg)") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
+
+# Bargraph of CN ratio # 
+ratio.means.sem <- ddply(CN, c("Treatment", "Week"), summarise,
+                   mean=mean(Ratio), sem=sd(Ratio)/sqrt(length(Ratio)))
+ratio.means.sem <- transform(ratio.means.sem, lower=mean-sem, upper=mean+sem)
+
+ratio.barplot<- ggplot(ratio.means.sem, aes(x=Week,y = mean, fill=Treatment)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+ratio.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=ratio.means.sem, width = 0.2, size=1) +
+  labs(x="Week of Growth Chamber Experiment", y="CN ratio") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
+
+```
+
+# 5) Statistical test 
+
+```{r}
+# Two factor anova of relative soil N concentration # 
+anova <- aov(CN$RelN ~ CN$Treatment*CN$Week, data = CN)
+summary(anova) 
+TukeyHSD(anova) 
+
+# Two factor ANOVA of ratio CN #
+anova <- aov(CN$Ratio ~ CN$Treatment*CN$Week, data = CN)
+summary(anova) 
+TukeyHSD(anova) 
+
+```
+

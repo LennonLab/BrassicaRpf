@@ -1,7 +1,7 @@
 ---
 title: "BrassicaProductivity"
 author: "Venus Kuo"
-date: "July 03, 2017"
+date: "August 19, 2017"
 output: pdf_document
 ---
 
@@ -17,7 +17,7 @@ Here, I performed a full factoral experiment treating Brassica rapa plants grown
 # Set working directory #
 rm(list = ls())
 getwd()
-setwd("C:/Users/Venus/Github/BrassicaRpf/data")
+setwd("~/../Github/BrassicaRpf/data")
 
 # Require or install packages #
 package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'reshape', 'reshape2', 'ggplot2') 
@@ -33,13 +33,13 @@ for (package in package.list) {
 Plant Fitness.csv : Plant attributes collected at end of 6 week growing period. Information include ID number, Treatment (rpf+ = 1, rpf- = 2), soil type (complex = 2, simple = 1), flower.count, seed.count, SLA (Specific leaf area), height, abiomass (above ground biomass), bbiomass (below ground biomass), dweight (dry weight), wweight (wet weight), shoot.root (shoot:root ratio), total.biomass.
 
 ```{r, message=FALSE, warning=FALSE}
-setwd("C:/Users/Venus/Github/BrassicaRpf/data")
+setwd("~/../Github/BrassicaRpf/data")
 
 # Load csv files # 
-plantfitness <- read.csv("Plant Fitness.csv", header=T)
+data <- read.csv("Plant Fitness.csv", header=T)
 
 # Remove compromised replicate #
-plantfitness <- plantfitness[-33, ]
+data <- data[-33, ]
 ```
 
 # 4) Brassica rapa plant realized and potential reproductive fitness 
@@ -50,13 +50,15 @@ One-factor ANOVA testing how Rpf treatment affecte seed and flower production in
 Student t-test to test significance of Rpf treatment on seed and flower production in live soil. 
 
 ```{r}
-# Seed production # 
+# Subset live dataset # 
+plantfitness <- subset(data, soil=="Live")
+
 # Averaging the seed counts for each treatment and soil type group # 
 seed.mean <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(seed.count))
 
 # Barplot of mean seed counts #
-seed.mean.barplot<- ggplot(seed.mean, aes(x=soil,y = mean, fill=Treatment)) + 
-  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+seed.mean.barplot<- ggplot(seed.mean, aes(x=Treatment,y = mean)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1, fill=c("grey", "white"))  
 
 # Calculating standard error #
 seed.mean.sem <- ddply(plantfitness, c("Treatment", "soil"), summarise, 
@@ -65,21 +67,20 @@ seed.mean.sem <- transform(seed.mean.sem, lower=mean-sem, upper=mean+sem)
 
 # Plotting bar graph with standard error #
 seed.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0.65), data=seed.mean.sem, width = 0.2, size = 1.5) +
-  labs(x="Soil type", y="Number of seeds produced") +
-  scale_fill_manual(values=c("Black", "White")) +
+                              position=position_dodge(0.65), data=seed.mean.sem, width = 0.2, size = 1) +
+  labs(y="Seeds produced per plant") +
   theme_classic() +
-  theme(axis.text.y=element_text(colour="black", size=18),
+  theme(axis.title.x=element_blank(),
+        axis.text.y=element_text(colour="black", size=18),
         axis.text.x=element_text(colour="black", size =18),
         axis.title=element_text(size=22),
         axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
-        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
-        legend.text=element_text(size=18)) +
-  annotate("text", x =0.525, y=87.5, label = c("A"), size=12)
+        legend.text=element_text(size=18))# +
+  #annotate("text", x =0.575, y=67, label = c("a"), size=12)
 
 
 # Flower Production # 
@@ -87,8 +88,8 @@ seed.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
 flower.mean <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(flower.count))
 
 # Barplot of flower production by soil type and treatment
-flower.mean.barplot<- ggplot(flower.mean, aes(x=soil, y = mean, fill=Treatment)) + 
-   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5) 
+flower.mean.barplot<- ggplot(flower.mean, aes(x=Treatment,y = mean)) + 
+   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1, fill=c("grey", "white")) 
 
 # Calculating standard error of the mean for flower production # 
 flower.mean.sem <- ddply(plantfitness, c("Treatment", "soil"), summarise,
@@ -97,29 +98,31 @@ flower.mean.sem <- transform(flower.mean.sem, lower=mean-sem, upper=mean+sem)
 
 # Plotting bar graph with standard error #
 flower.mean.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(.65), data=flower.mean.sem, width = 0.2, size=1.5) +
-  labs(x="Soil type", y="Number of flowers produced") +
+                              position=position_dodge(.65), data=flower.mean.sem, width = 0.2, size=1) +
+  labs( y="Flowers produced per plant") +
   theme_classic() +
-  scale_fill_manual(values=c("Black", "White")) +
-  theme(axis.text.y=element_text(colour="black", size=18),
+  theme(axis.title.x=element_blank(),
+        axis.text.y=element_text(colour="black", size=18),
         axis.text.x=element_text(colour="black", size =18),
         axis.title=element_text(size=22),
         axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
-        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
-        legend.text=element_text(size=18)) +
-  annotate("text", x =0.515, y=12.75, label = c("B"), size=12)
+        legend.text=element_text(size=18)) #+
+#  annotate("text", x =0.575, y=10.8, label = c("b"), size=12)
+
+
 ```
+
 
 # 5) Does Rpf treatment and soil type affect plant reproductive fitness?
 
 ```{r}
 # Seed count # 
 # Two-factored ANOVA of the effect of treatment and soil type on seed count # 
-seed.aov <- anova(lm(seed.count ~ Treatment*soil, data=plantfitness))
+seed.aov <- anova(lm(seed.count ~ Treatment, data=plantfitness))
 seed.aov
 
 # Subsetting live soil data # 
@@ -132,14 +135,16 @@ TukeyHSD(seed.live.aov)
 
 # Flower count # 
 # Two-factor ANOVA of flower counts with treatment and soil type # 
-flower.aov <- anova(lm(flower.count ~ Treatment*soil, data=plantfitness))
+flower.aov <- anova(lm(flower.count ~ Treatment, data=plantfitness))
 flower.aov
 
 # One-factored ANOVA testing the effect of treatment on flower counts of plants in live soil # 
-flower.live.aov <- aov(flower.count ~ Treatment, data=plant.sub)
+flower.live.aov <- aov(flower.count ~ Treatment, data=plantfitness)
 summary(flower.live.aov)
 TukeyHSD(flower.live.aov)
 # Results: Rpf treatment did not affect reproductivie fitness. 
+
+
 ```
 
 # 6) Brassica rapa total plant biomass 
@@ -155,7 +160,7 @@ plantmeans <- ddply(plantfitness, c("Treatment", "soil"), summarise, mean=mean(t
 
 # Barplot of total plant biomass #
 plantmeans.barplot<- ggplot(plantmeans, aes(x= soil ,y = mean, fill = Treatment)) + 
-   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)
+   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1)
 
 # Calculating standard error of means for total plant biomass #
 plantmeans.sem <- ddply(plantfitness, c("soil", "Treatment"), summarise,
@@ -165,8 +170,8 @@ plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
 
 # Barplot of total plant biomass with sem added # 
 plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1.5) +
-  labs(x="Soil type", y="Total plant biomass (g)") +
+                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1) +
+  labs( y="Total plant biomass (g)") +
   theme_classic() +
   scale_fill_manual(values=c("Black", "White")) +
   theme(axis.text.y=element_text(colour="black", size=18),
@@ -179,7 +184,7 @@ plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18)) +
-  annotate("text", x =0.55, y=2.1, label = c("A"), size=12)
+  annotate("text", x =0.575, y=2.1, label = c("a"), size=12)
 
 
 
@@ -194,22 +199,22 @@ plant.m <- melt(plant.sub.ab)
 plant.m.means <- ddply(plant.m, c("Treatment", "variable"), summarise, mean=mean(value))
 
 # Plotting stacked bar graph # 
-live.biomass.stacked.bar <- ggplot(plant.m.means, aes(x = Treatment, y = mean, fill = variable)) + 
-  geom_bar(width=0.5, colour="black", size=1.5, stat = "identity")
+live.biomass.bar <- ggplot(plant.m.means, aes(x = Treatment, y = mean, fill = variable)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1)
 
 plant.m.sub <- subset(plant.m, variable == "bbiomass")
 
 # Calculating standard error of means for total plant biomass #
-plantmeans.sem <- ddply(plant.m.sub, c("Treatment", "variable"), summarise,
+plantmeans.sem <- ddply(plant.m, c("Treatment", "variable"), summarise,
                    mean=mean(value), sem=sd(value)/sqrt(length(value)))
 plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
 
 # Plotting stacked bargraph # 
-live.biomass.stacked.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0), data=plantmeans.sem, width = 0.2, size=1.5) +
+live.biomass.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1) +
   labs(x="Treatment", y="Plant biomass (g)") +
   theme_classic() +
-  scale_fill_manual(values=c("White", "Grey")) +
+  scale_fill_manual(values=c("White", "Black")) +
   theme(axis.text.y=element_text(colour="black", size=18),
         axis.text.x=element_text(colour="black", size =18),
         axis.title=element_text(size=22),
@@ -220,7 +225,66 @@ live.biomass.stacked.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 2),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18))+
-  annotate("text", x =0.55, y=1.9, label = c("B"), size=12)
+  annotate("text", x =0.55, y=1.1, label = c("b"), size=12)
+
+
+# Figure for just the belowground biomass # 
+# Summarize total plant biomass #
+plantmeans <- ddply(plant.sub, c("Treatment"), summarise, mean=mean(bbiomass))
+
+# Barplot of total plant biomass #
+plantmeans.barplot<- ggplot(plantmeans, aes(x= Treatment ,y = mean)) + 
+   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1, fill=c("Grey", "White"))
+
+# Calculating standard error of means for total plant biomass #
+plantmeans.sem <- ddply(plant.sub, c("Treatment"), summarise,
+                   mean=mean(bbiomass), sem=sd(bbiomass)/sqrt(length(bbiomass)))
+plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
+
+
+# Barplot of below plant biomass with sem added # 
+plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1) +
+  labs( y="Root biomass (g) per plant") +
+  theme_classic() +
+  theme(axis.title.x=element_blank(),
+        axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18)) 
+
+# Barplot of above plant biomass with sem added # 
+plantmeans <- ddply(plant.sub, c("Treatment"), summarise, mean=mean(abiomass))
+
+# Barplot of total plant biomass #
+plantmeans.barplot<- ggplot(plantmeans, aes(x= Treatment ,y = mean)) + 
+   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1, fill=c("Grey", "White"))
+
+# Calculating standard error of means for total plant biomass #
+plantmeans.sem <- ddply(plant.sub, c("Treatment"), summarise,
+                   mean=mean(abiomass), sem=sd(abiomass)/sqrt(length(abiomass)))
+plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
+
+plantmeans.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1) +
+  labs( y="Aboveground plant biomass (g)") +
+  theme_classic() +
+  theme(axis.title.x=element_blank(),
+        axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=20),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18)) 
+
 ```
 
 # 7) Does Rpf treatment affect total and belowground biomass? 
@@ -231,15 +295,15 @@ Two-factor ANOVA testing how soil type (sterlized versus live) and Rpf treatment
 ```{r}
 # Total biomass # 
 # Two-factor ANOVA of total biomass with treatment and soil type # 
-plant.t.aov <- anova(lm(total.biomass ~ Treatment*soil, data=plantfitness))
-plant.t.aov
+#plant.t.aov <- anova(lm(total.biomass ~ Treatment, data=plantfitness))
+#plant.t.aov
 # Test of normality # 
-qqnorm(plantfitness$total.biomass)
-shapiro.test(plantfitness$total.biomass)
+#qqnorm(plantfitness$total.biomass)
+#shapiro.test(plantfitness$total.biomass)
 # Results: p = 0.06, data is normal # 
 
 # One-factored ANOVA testing the effect of treatment on seed counts of plants in live soil # 
-total.live.aov <- aov(total.biomass ~ Treatment, data=plant.sub)
+total.live.aov <- aov(total.biomass ~ Treatment, data=plantfitness)
 summary(total.live.aov)
 TukeyHSD(total.live.aov)
 # Results: Two-factor ANOVA showed that Rpf treatment had a strong effect on total plant biomass p = 0.002
@@ -247,10 +311,15 @@ TukeyHSD(total.live.aov)
 #post-hoc t-test showed that Rpf treatment decreased biomass 0.6485, which is approximately a 33% reducting in total biomass between Rpf- and Rpf+ treatment. 
 
 
+#ratiobiomass.aov <- anova(lm(value~variable*Treatment ,data=plant.m ))
+#ratiobiomass.aov
+#summary(ratiobiomass.aov)
+#TukeyHSD(abiomass.aov)
+
 # Belowground biomass # 
 # Two-factor ANOVA for belowground biomass changes with soil type and treatment # 
-bbiomass.aov <- anova(lm(bbiomass ~ Treatment*soil, data=plantfitness))
-bbiomass.aov
+#bbiomass.aov <- anova(lm(bbiomass ~ Treatment, data=plantfitness))
+#bbiomass.aov
 # One-factor ANOVA for belowground biomass changes with treatment # 
 bbiomass.aov <- aov(bbiomass ~ Treatment, data=plantfitness)
 summary(bbiomass.aov)
@@ -259,12 +328,14 @@ TukeyHSD(bbiomass.aov)
 
 # Aboveground biomass # 
 # Two-factor ANOVA for above ground biomass # 
-abiomass.aov <- anova(lm(abiomass ~ Treatment*soil, data=plantfitness))
-abiomass.aov
+#abiomass.aov <- anova(lm(abiomass ~ Treatment*soil, data=plantfitness))
+#abiomass.aov
 
-abiomass.aov <- aov(abiomass ~ Treatment, data=plantfitness)
+abiomass.aov <- aov(abiomass ~ Treatment, data=plant.sub)
 summary(abiomass.aov)
 TukeyHSD(abiomass.aov)
+
+
 ```
 
 

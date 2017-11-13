@@ -22,7 +22,7 @@ source("C:/Users/Venus/GitHub/BrassicaRpf/bin/MothurTools.R")
 source("C:/Users/Venus/GitHub/BrassicaRpf/bin/phylodiversity2.R")
 
 # Load dependencies # 
-package.list <- c('vegan', 'plyr' , 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn', 'indicspecies', 'viridis' ,  'BiodiversityR') 
+package.list <- c('vegan', 'plyr' , 'ggplot2', 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn', 'indicspecies', 'viridis' ,  'BiodiversityR') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -68,9 +68,9 @@ design <- read.delim(design, header=T, row.names=1)
 OTU <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
 
 # Import Taxonomy
-OTU.tax <- read.tax(taxonomy = tax, format = "rdp")
+#OTU.tax <- read.tax(taxonomy = tax, format = "rdp")
 
-#OTU.tre <- read.tree("../mothur/output/Brassica.bac.rename.tree")
+#OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.1")
 ```
 
 # Make Maximum Liklihood tree using Fasttree
@@ -80,21 +80,21 @@ Code below was used to run on Mason at IU to generate
 #!/bin/bash
 #PBS -k o
 #PBS -l nodes=2:ppn=8,vmem=100gb,walltime=5:00:00
-#PBS -M lennonj@indiana.edu
+#PBS -M vkuo@iu.edu
 #PBS -m abe
 #PBS -j oe
 
-module load python/2.7.3
-module load biopython/1.63
-module load fasttree/2.1.1
+#module load python/2.7.3
+#module load biopython/1.63
+#module load fasttree/2.1.1
 
-cd /N/dc2/projects/Lennon_Sequences/2017BrassicaRpf
+#cd /N/dc2/projects/Lennon_Sequences/2017BrassicaRpf
 
-python name_change.py "Brassica.bac.final.0.03.rep.fasta" "Brassica.bac.final.0.03.rep.rename.fasta"
+#python name_change.py "Brassica.bac.final.0.03.rep.fasta" "Brassica.bac.final.0.03.rep.rename.fasta"
 
-fasttree -gtr -nt -gamma -fastest Brassica.bac.final.0.03.rep.rename.fasta > Brassica.bac.rename.tree
+#fasttree -gtr -nt -gamma -fastest Brassica.bac.final.0.03.rep.rename.fasta > Brassica.bac.rename.tree
 
-# Output: 
+# Output: Brassica.bac.rename.tree.1
 ```
 
 
@@ -127,7 +127,7 @@ min.good.c <- min(goods.c.Brassica) # 0.96
 
 # 5) Alpha diversity
 
-## Calculate Alpha diversity using Resampling
+## Calculate Taxonomic Alpha diversity using Resampling
 
 ```{r}
 # Mario's resampling code to estimate alpha diversity (used if run.all = T)
@@ -185,6 +185,46 @@ even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
 # Mean richness for total and Rpf- communities is 3236.336, evenness is 0.0564
 ```
 
+## Richness barplot 
+
+```{r}
+# Calculate biomass means and standard errors of the means # 
+rich.cDNA.means.sem <- ddply(rich.2, c("treatment"), summarise,
+                   mean=mean(rich.cDNA), sem=sd(rich.cDNA)/sqrt(length(rich.cDNA)))
+rich.cDNA.means.sem <- transform(rich.cDNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+rich.DNA.means.sem <- ddply(rich.2, c("treatment"), summarise,
+                   mean=mean(rich.DNA), sem=sd(rich.DNA)/sqrt(length(rich.DNA)))
+rich.DNA.means.sem <- transform(rich.DNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+rich.means <- rbind(rich.DNA.means.sem,rich.cDNA.means.sem)
+rich.means$Community <- c("DNA", "DNA", "cDNA", "cDNA")
+
+# Bargraph #
+rich.barplot<- ggplot(rich.means, aes(x=Community,y = mean, fill=treatment)) + 
+  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Clean Bargraph figure #
+rich.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=rich.means, width = 0.2, size=1) +
+  labs(x="Community Type", y="Richness") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
+
+
+
+```
+
 ## Richness: differences among treatment?
 
 ```{r}
@@ -201,6 +241,44 @@ TukeyHSD(rich.anova.d)
 # Total community richness was not significantly affected by Rpf treatment p=0.33, evenness p=0.865
 ```
 
+## Evenness barplot 
+
+```{r}
+# Calculate biomass means and standard errors of the means # 
+even.cDNA.means.sem <- ddply(even.2, c("treatment"), summarise,
+                   mean=mean(even.cDNA), sem=sd(even.cDNA)/sqrt(length(even.cDNA)))
+even.cDNA.means.sem <- transform(even.cDNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+even.DNA.means.sem <- ddply(even.2, c("treatment"), summarise,
+                   mean=mean(even.DNA), sem=sd(even.DNA)/sqrt(length(even.DNA)))
+even.DNA.means.sem <- transform(even.DNA.means.sem, lower=mean-sem, upper=mean+sem)
+
+even.means <- rbind(even.DNA.means.sem,even.cDNA.means.sem)
+even.means$Community <- c("DNA", "DNA", "cDNA", "cDNA")
+
+# Bargraph #
+even.barplot<- ggplot(even.means, aes(x=Community,y = mean, fill=treatment)) + 
+  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Clean Bargraph figure #
+even.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=even.means, width = 0.2, size=1) +
+  labs(x="Community Type", y="Evenness") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
+```
+
+
 ## Evenness: differences among sites?
 
 ```{r}
@@ -213,6 +291,113 @@ summary(even.anova.d)
 TukeyHSD(even.anova.d)
 
 # Results: Rpf treatment did not affect evenness of active (p=0.316) or total community (p=0.865).
+```
+
+## Calulcate Diversity 
+
+```{r}
+# Observed Richness
+S.obs <- rowSums((OTU > 0) * 1)
+
+# Simpson's Evenness
+SimpE <- function(x = ""){
+  x <- as.data.frame(x)
+  D <- diversity(x, "inv")
+  S <- sum((x > 0) * 1) 
+  E <- (D)/S 
+  return(E)
+}
+#simpsE <- round(apply(OTU, 1, SimpE), 2)
+
+# Shannon's Diversity
+#H <- function(x = ""){
+#  x <- x[x>0]
+#  H = 0
+#  for (n_i in x){
+#    p = n_i / sum(x)
+#    H = H - p*log(p) 
+#  }
+#  return(H)
+#}
+
+#shan <- round(apply(OTU, 1, H), 2)
+#shan2 <- diversity(OTU, index = "shannon")
+
+#alpha.div <- cbind(design, S.obs, shan)
+
+# Calculate biomass means and standard errors of the means # 
+#div <- ddply(alpha.div, c("treatment", "type"), summarise,
+#                   mean=mean(shan), sem=sd(shan)/sqrt(length(shan)))
+#div <- transform(div, lower=mean-sem, upper=mean+sem)
+
+# Bargraph #
+#div.barplot<- ggplot(div, aes(x=type,y = mean, fill=treatment)) + 
+#  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+
+# Clean Bargraph figure #
+#div.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+#                              position=position_dodge(0.65), data=div, width = 0.2, size=1) +
+#  labs(x="Community Type", y="Shannon Diversity") +
+#  theme_classic() +
+#  scale_fill_manual(values=c("White", "Grey")) +
+#  theme(axis.text.y=element_text(colour="black", size=16),
+#        axis.text.x=element_text(colour="black", size =14),
+#        axis.title=element_text(size=18),
+#        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+#        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+#        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+#        axis.ticks.length = unit(.25, "cm"),
+#        axis.ticks = element_line(size = 1.5),
+#        legend.title = element_text(size=18),
+#        legend.text=element_text(size=18))
+```
+
+
+## Phylogenetic alpha diversity with Rpf treatment 
+
+```{r}
+# Test if all OTUs are in tree
+#sum(colnames(OTU) %in% OTU.tre$tip.label) == length(colnames(OTU) %in% OTU.tre$tip.label)
+
+# Root Tree if Needed
+#is.rooted(OTU.tre)
+#OTU.tre.rooted <- midpoint(OTU.tre)
+
+# Run 
+#if (run.all == TRUE){
+#  OTU.2 <- rrarefy(OTU, 30000)
+#  OTU.2 <- OTU.2[,which(colSums(OTU.2) > 0)]
+#  OTU.tre.2 <- prune.sample(OTU.2, OTU.tre.rooted)
+
+  # Calculate Faith's D
+#  Brassica.pd <- pd(OTU.2, OTU.tre.2, include.root = F)
+
+  # Write output to files
+#  write.table(Brassica.pd, "../data/phylo.txt", sep = "\t",
+#              col.names = T, row.names = T)
+#}
+
+# Read in alpha diversity files from above
+#Brassica.pd2 <- read.table("../data/phylo.txt", sep = "\t")
+
+# Make new dataframe merging design file and phylo diversity
+#Brassica.phylo <- data.frame(design[sort(row.names(design)), ],
+#                         pd = Brassica.pd2$PD)
+
+# Take averages of technial reps
+#pd.rep.ave <- ddply(Brassica.phylo, .(env, treat, qPCR.match),
+#                      summarize, phylo = mean(pd))
+
+# Reshape data
+#phylo.2 <- reshape(pd.rep.ave[,1:4], timevar = "treat",
+#                   idvar = c("qPCR.match", "env"), direction = "wide")
+
+# Calcualte means +/- SEM of control and treated richness
+#phylo.2.ag.mean.control <- aggregate(phylo.C ~ env, phylo.2, mean)
+#phylo.2.ag.sem.control <- aggregate(phylo.C ~ env, phylo.2, sem)
+#phylo.2.ag.mean.treatment <- aggregate(phylo.E ~ env, phylo.2, mean)
+#phylo.2.ag.sem.treatment <- aggregate(phylo.E ~ env, phylo.2, sem)
+
 ```
 
 # 6) Beta Diversity
@@ -266,20 +451,20 @@ mean(treatment.dis)  # The mean bray curtis dis site similarity is 0.477
 ```{r}
 #png(filename="../figures/FigureS2-Ordinations.png",
 #    width = 1800, height = 800, res = 96*2)
-layout(matrix(1:3, 1, 3), widths = c(9, 9, 2.5))
-par(mar = c(4, 5, 4, 0) + 0.5)
+layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
+par(mar = c(7, 10, 1, 0) + 0.5)
 
 plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
      ylim = c(-0.4, 0.4), xlim = c(-0.5, 0.4),
      xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
-     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""), line= 5,
      #xlab = "", ylab = "", xaxt = "n", yaxt = "n",
-     pch = 22, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1,
+     pch = 22, cex = 2.0, type = "n", cex.lab = 3, cex.axis = 2,
      axes = FALSE)
 
 # Add Axes
-axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.25, las = 1)
-axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.25, las = 1)
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1)
 axis(side = 3, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
 axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
 axis(side = 1, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
@@ -289,8 +474,8 @@ axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
 abline(h = 0, v = 0, lty = 3)
 box(lwd = 2)
 
-mtext(side = 3, "Taxonomic PCoA", line = 1.5, cex = 1)
-text("a", x = -0.48, y = 0.38, font = 2, cex = 1.8)
+#mtext(side = 3, "Taxonomic PCoA", line = 1.5, cex = 1)
+#text("a", x = -0.48, y = 0.38, font = 2, cex = 1.8)
 
 # Subset data
 Brassica.div.sort <- Brassica.div[order(Brassica.div[,1]) ,]
@@ -311,24 +496,25 @@ Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
 # Add points
 # Active community Rpf+
 points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
-       cex = 2, col = "red", bg = "white", lwd = 2)
+       cex = 3, col = "black", bg = " blue")
 # Active community Rpf-
 points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
-       cex = 2, col = "red", bg = "red", lwd = 2)   
+       cex = 3, col = "black", bg = "Green")   
 # Total community Rpf+ 
 points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 22,
-       cex = 2, col = "darkgreen", bg = "white", lwd = 2)
+       cex = 3, col = "black", bg = " blue")
 # Total community Rpf-
 points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 22,
-       cex = 2, col = "darkgreen", bg = "darkgreen", lwd = 2)
+       cex = 3, col = "black", bg = "Green")
 
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
 legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pch = c(21, 21, 22, 22),
-       pt.bg = c("white", "red", "white", "darkgreen"),
-       bty = "n", y.intersp = 1.5, cex = 1.25)
+       pt.bg = c("Green", "blue", "Green", "blue"),
+       bty = "n", y.intersp = 1, pt.cex = 3, cex = 2)
+
 ```
 
 # Beta diversity hypothesis testing 
@@ -341,7 +527,7 @@ all.equal(row.names(Brassica.div), row.names(OTU.REL.log))
 
 # Run PERMANOVA with adonis function # 
 Brassica.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
-                         method = "bray", binary = FALSE, permutations = 999)
+                         method = "bray", binary = FALSE, permutations = 9999)
 Brassica.permanova
 
 Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
@@ -350,6 +536,7 @@ permutest(beta.disp, 999)
 TukeyHSD(beta.disp)
 # Results: Activity status affects the microbial community compositon --> expected
 # Rpf treatment affect, but not signifcantly, the microbial community (p=0.089) 
+
 ```
 
 ## Species-Site Group Associations 
@@ -359,6 +546,61 @@ Treatment <- c(rep("Active Rpf-", 5), rep("Active Rpf+", 5),rep("Total Rpf-", 5)
 indval <- multipatt(OTU, cluster = Treatment, func = "IndVal.g", control = how(nperm=999))
 
 ```
+
+
+## Phylogenetic beta-diversity
+
+```{r}
+phylo.dist <- read.delim("../phylo/Brassica.bac.rename.tree.21.weighted.phylip.dist",
+                         skip = 1, row.names = 1, header = F, strip.white = T)
+
+phylo.dist <- as.dist(phylo.dist)
+
+# Principal Coordinates Analysis (PCoA)
+Brassica.phylo.PCoA <- cmdscale(phylo.dist, eig = TRUE, k = 3)
+explainvar1 <- round(Brassica.phylo.PCoA$eig[1] /
+                       sum(Brassica.phylo.PCoA$eig), 3) * 100
+explainvar2 <- round(Brassica.phylo.PCoA$eig[2] /
+                       sum(Brassica.phylo.PCoA$eig), 3) * 100
+explainvar3 <- round(Brassica.phylo.PCoA$eig[3] /
+                       sum(Brassica.phylo.PCoA$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+# OTU Scores
+otu.scores <- t(cor(Brassica.phylo.PCoA$points, OTU.REL))
+otu.scores <- as.matrix(otu.scores)[,1:2]
+otu.scores <- otu.scores[abs(otu.scores[,1]) > 0.7|
+                           abs(otu.scores[,2]) > 0.7,]
+
+# Average UniFrac Distance Between Treatments
+Brassica.phylo.m <- as.matrix(phylo.dist)
+all.equal(row.names(Brassica.div), rownames(Brassica.phylo.m))
+
+pair.div <- unique(Brassica.div$pair)
+pair.dis <- rep(NA, length(pair.div))
+for(i in 1:length(pair.div)){
+  temp <- row.names(Brassica.div[Brassica.div$pair == pair.div[i], ])
+  pair.dis[i] <- Brassica.phylo.m[temp[1], temp[2]]
+}
+
+mean(pair.dis)
+
+# Average BC Distance Between Replicates
+reps <- names(which(table(Brassica.div$qPCR.match) == 4))
+reps.dis <- rep(NA, length(reps))
+
+for(i in 1:length(reps)){
+  temp <- Brassica.div[Brassica.div$qPCR.match == reps[i] & Brassica.div$treat == "C", ]
+  temp.names <- row.names(temp)
+  reps.dis[i] <- Brassica.phylo.m[temp.names[1], temp.names[2]]
+}
+mean(reps.dis)
+
+t.test(pair.dis, reps.dis)
+
+```
+
+
 
 
 

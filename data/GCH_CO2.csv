@@ -1,4 +1,4 @@
-Sample ID,plant,Treatment,soil,rep,hour,Week 1,Week 2,Week 3,Week 4,Week 5,Week 6
+Sample ID,plant,Treatment,soil,rep,hour,Week.1,Week.2,Week.3,Week.4,Week.5,Week.6
 1,present,Rpf+,sterilized,1,24,17513.897,2573.283,25365.542,6971.552,15642.22,43453.421
 2,present,Rpf+,sterilized,2,24,21059.842,3513.652,35393.53,14072.84,17224.618,21058.751
 3,present,Rpf+,sterilized,3,24,20528.616,4360.102,24411.168,16174.843,16115.444,14248.439
