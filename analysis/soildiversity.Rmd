@@ -68,9 +68,9 @@ design <- read.delim(design, header=T, row.names=1)
 OTU <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
 
 # Import Taxonomy
-OTU.tax <- read.tax(taxonomy = tax, format = "rdp")
+#OTU.tax <- read.tax(taxonomy = tax, format = "rdp")
 
-OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.1")
+#OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.1")
 ```
 
 # Make Maximum Liklihood tree using Fasttree
@@ -307,49 +307,49 @@ SimpE <- function(x = ""){
   E <- (D)/S 
   return(E)
 }
-simpsE <- round(apply(OTU, 1, SimpE), 2)
+#simpsE <- round(apply(OTU, 1, SimpE), 2)
 
 # Shannon's Diversity
-H <- function(x = ""){
-  x <- x[x>0]
-  H = 0
-  for (n_i in x){
-    p = n_i / sum(x)
-    H = H - p*log(p) 
-  }
-  return(H)
-}
+#H <- function(x = ""){
+#  x <- x[x>0]
+#  H = 0
+#  for (n_i in x){
+#    p = n_i / sum(x)
+#    H = H - p*log(p) 
+#  }
+#  return(H)
+#}
 
-shan <- round(apply(OTU, 1, H), 2)
-shan2 <- diversity(OTU, index = "shannon")
+#shan <- round(apply(OTU, 1, H), 2)
+#shan2 <- diversity(OTU, index = "shannon")
 
-alpha.div <- cbind(design, S.obs, shan)
+#alpha.div <- cbind(design, S.obs, shan)
 
 # Calculate biomass means and standard errors of the means # 
-div <- ddply(alpha.div, c("treatment", "type"), summarise,
-                   mean=mean(shan), sem=sd(shan)/sqrt(length(shan)))
-div <- transform(div, lower=mean-sem, upper=mean+sem)
+#div <- ddply(alpha.div, c("treatment", "type"), summarise,
+#                   mean=mean(shan), sem=sd(shan)/sqrt(length(shan)))
+#div <- transform(div, lower=mean-sem, upper=mean+sem)
 
 # Bargraph #
-div.barplot<- ggplot(div, aes(x=type,y = mean, fill=treatment)) + 
-  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+#div.barplot<- ggplot(div, aes(x=type,y = mean, fill=treatment)) + 
+#  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
 
 # Clean Bargraph figure #
-div.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0.65), data=div, width = 0.2, size=1) +
-  labs(x="Community Type", y="Shannon Diversity") +
-  theme_classic() +
-  scale_fill_manual(values=c("White", "Grey")) +
-  theme(axis.text.y=element_text(colour="black", size=16),
-        axis.text.x=element_text(colour="black", size =14),
-        axis.title=element_text(size=18),
-        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
-        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
-        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
-        axis.ticks.length = unit(.25, "cm"),
-        axis.ticks = element_line(size = 1.5),
-        legend.title = element_text(size=18),
-        legend.text=element_text(size=18))
+#div.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+#                              position=position_dodge(0.65), data=div, width = 0.2, size=1) +
+#  labs(x="Community Type", y="Shannon Diversity") +
+#  theme_classic() +
+#  scale_fill_manual(values=c("White", "Grey")) +
+#  theme(axis.text.y=element_text(colour="black", size=16),
+#        axis.text.x=element_text(colour="black", size =14),
+#        axis.title=element_text(size=18),
+#        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+#        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+#        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+#        axis.ticks.length = unit(.25, "cm"),
+#        axis.ticks = element_line(size = 1.5),
+#        legend.title = element_text(size=18),
+#        legend.text=element_text(size=18))
 ```
 
 
@@ -451,20 +451,20 @@ mean(treatment.dis)  # The mean bray curtis dis site similarity is 0.477
 ```{r}
 #png(filename="../figures/FigureS2-Ordinations.png",
 #    width = 1800, height = 800, res = 96*2)
-layout(matrix(1:3, 1, 3), widths = c(9, 9, 2.5))
-par(mar = c(4, 5, 4, 0) + 0.5)
+layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
+par(mar = c(7, 10, 1, 0) + 0.5)
 
 plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
      ylim = c(-0.4, 0.4), xlim = c(-0.5, 0.4),
      xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
-     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""), line= 5,
      #xlab = "", ylab = "", xaxt = "n", yaxt = "n",
-     pch = 22, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1,
+     pch = 22, cex = 2.0, type = "n", cex.lab = 3, cex.axis = 2,
      axes = FALSE)
 
 # Add Axes
-axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.25, las = 1)
-axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.25, las = 1)
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1)
 axis(side = 3, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
 axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
 axis(side = 1, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
@@ -474,7 +474,7 @@ axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
 abline(h = 0, v = 0, lty = 3)
 box(lwd = 2)
 
-mtext(side = 3, "Taxonomic PCoA", line = 1.5, cex = 1)
+#mtext(side = 3, "Taxonomic PCoA", line = 1.5, cex = 1)
 #text("a", x = -0.48, y = 0.38, font = 2, cex = 1.8)
 
 # Subset data
@@ -496,24 +496,25 @@ Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
 # Add points
 # Active community Rpf+
 points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
-       cex = 2, col = "black", bg = "white", lwd = 2)
+       cex = 3, col = "black", bg = " blue")
 # Active community Rpf-
 points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
-       cex = 2, col = "black", bg = "red", lwd = 2)   
+       cex = 3, col = "black", bg = "Green")   
 # Total community Rpf+ 
 points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 22,
-       cex = 2, col = "black", bg = "white", lwd = 2)
+       cex = 3, col = "black", bg = " blue")
 # Total community Rpf-
 points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 22,
-       cex = 2, col = "black", bg = "darkgreen", lwd = 2)
+       cex = 3, col = "black", bg = "Green")
 
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
 legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pch = c(21, 21, 22, 22),
-       pt.bg = c("white", "red", "white", "darkgreen"),
-       bty = "n", y.intersp = 2, cex = 1.5)
+       pt.bg = c("Green", "blue", "Green", "blue"),
+       bty = "n", y.intersp = 1, pt.cex = 3, cex = 2)
+
 ```
 
 # Beta diversity hypothesis testing 
@@ -526,7 +527,7 @@ all.equal(row.names(Brassica.div), row.names(OTU.REL.log))
 
 # Run PERMANOVA with adonis function # 
 Brassica.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
-                         method = "bray", binary = TRUE, permutations = 9999)
+                         method = "bray", binary = FALSE, permutations = 9999)
 Brassica.permanova
 
 Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
@@ -535,6 +536,7 @@ permutest(beta.disp, 999)
 TukeyHSD(beta.disp)
 # Results: Activity status affects the microbial community compositon --> expected
 # Rpf treatment affect, but not signifcantly, the microbial community (p=0.089) 
+
 ```
 
 ## Species-Site Group Associations 
