@@ -36,7 +36,7 @@ Plant Fitness.csv : Plant attributes collected at end of 6 week growing period. 
 setwd("~/../Github/BrassicaRpf/data")
 
 # Load csv files # 
-data <- read.csv("Plant Fitness.csv", header=T)
+data <- read.csv("Plant Fitness.txt", header=T)
 
 # Remove compromised replicate #
 data <- data[-33, ]
