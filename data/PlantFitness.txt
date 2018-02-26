@@ -1,2 +1,0 @@
-Treatment,soil,Rep,flower.count,seed.count,SLA,height,abiomass,bbiomass,dweight,shoot.root,total.biomass
-Rpf-,Sterilized,1,4,29,127.143,17.1,0.684,0.943,0.07,0.36,0.725,1.627

@@ -1,16 +1,28 @@
-# Brassica-Rpf Project 
+# Resuscitating the microbial seed bank alter plant-soil interacts
 
 ## Goal
-To test how resuscitating the microbial seedbank with a bacterial resuscitation promoting factor (Rpf) will alter plant-soil microbe interactions and affect plant fitness and productivity. 
+To test how resuscitating the microbial seedbank with a resuscitation promoting factor (Rpf) will alter plant-soil microbe interactions and affect plant traits. 
 
 ## Methods 
-Briefly, in a full factoral experiment treating Brassica rapa plants grown in growth chambers with recombiant Rpf protein in live and sterilized soil. At the end of the six week growth chamber experiment, biomass was determined by dry weight. Soil community structure and diversity was determined. 
+We conducted a factoral growth chamber experiment to test the effect of Rpf and soil sterilization treatment on Brassica rapa plant biomass and reproductive output. We also determined the effects of Rpf treatment on soil microbial activity, abundance, and community composition using culture-independent genomic methods. 
 
 ## Contents
 
 **analyses**
 
-BrassicaRpfRCode.Rmd: All anaylses of plant fitness and productivity testing the effects of Rpf treatment. 
+brassica_traits.Rmd: Analysis of plant trait changes with Rpf and soil sterilization treatment.
+
+control_experiment.Rmd: Analysis of control experiment testing the effect of direct Rpf application on Arabidopsis seedlings
+
+soil_abundanceactivity.Rmd: Analysis of weekly soil CO2 respiration with Rpf treatment and soil bacterial and fungal gene copy abundances with Rpf treatment and week of growth chamber experiment. 
+
+soil_diversity.Rmd: Analysis of active and total soil bacterial diversity, richness, and community composition between Rpf treatments.
+
+soil_properties.Rmd: Analysis of soil pH, C:N ratio, and available P. 
+
+**bin**
+
+DiversityFunctions.R: R code of custom diversity functions for bacterial community structure analyses. 
 
 MothurTools.R: R code of workflow pipeline for mothur output files. Done by Mario Muscarella. 
 
@@ -18,17 +30,25 @@ summarySE.R: R code for determine summary standard error to be used for ggplot2.
 
 IRGARespiration.R: R code of workflow pipeline for normalizing and determining CO2 level of soil samples.
 
-CommunityComposition.Rmd: R code of workflow pipeline to generate soil community diversity and composition. 
-
-Figure 1.Rmd: Cleaned code to generate figure 1 of the manuscript describing the effect of Rpf treatment on Brassica plants in live soil. 
-
 **data**
 
-qPCR.csv : Bacterial 16S rRNA and fungal ITS gene copy abundance data from quantitative PCR analysis. 
+Brassica.design.txt: Text file of factoral experimental design.
 
-GCH_CO2.csv : Soil CO2 respiration data from soil. 
+CN.txt: Text file of C:N ratio results.
 
-Plant Fitness.csv : Plant measurements of flower count, specific leaf area, seed counts, height, total (above and belowground) biomass. 
+even.txt: Text file of bacterial community evenness resampling output.
+
+rich.txt: Test file of bacterial community taxonomic richness resampling output. 
+
+GCH_CO2.txt: Text file of determined soil CO2 respiration results for each week of the growth chamber experiment. 
+
+qPCR.txt: Text file of bacterial 16S rRNA and fungal ITS gene copy abundance data from quantitative PCR analysis. 
+
+plantfitness.txt: Text file of Brassica rapa plant measurements of flower count, specific leaf area, seed counts, height, total (above and belowground) biomass. 
+
+seedlingbiomass.txt: Text file of Arabidopsis thaliana seedling biomass on MS media plates with Rpf treatment.
+
+SoilpH.txt: Text file of soil pH results. 
 
 **figures**
 Not added yet

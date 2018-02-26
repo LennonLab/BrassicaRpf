@@ -220,9 +220,6 @@ rich.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
         axis.ticks = element_line(size = 1.5),
         legend.title = element_text(size=18),
         legend.text=element_text(size=18))
-
-
-
 ```
 
 ## Richness: differences among treatment?
@@ -310,46 +307,46 @@ SimpE <- function(x = ""){
 #simpsE <- round(apply(OTU, 1, SimpE), 2)
 
 # Shannon's Diversity
-#H <- function(x = ""){
-#  x <- x[x>0]
-#  H = 0
-#  for (n_i in x){
-#    p = n_i / sum(x)
-#    H = H - p*log(p) 
-#  }
-#  return(H)
-#}
+H <- function(x = ""){
+  x <- x[x>0]
+  H = 0
+  for (n_i in x){
+    p = n_i / sum(x)
+    H = H - p*log(p) 
+  }
+  return(H)
+}
 
-#shan <- round(apply(OTU, 1, H), 2)
-#shan2 <- diversity(OTU, index = "shannon")
+shan <- round(apply(OTU, 1, H), 2)
+shan2 <- diversity(OTU, index = "shannon")
 
-#alpha.div <- cbind(design, S.obs, shan)
+alpha.div <- cbind(design, S.obs, shan)
 
 # Calculate biomass means and standard errors of the means # 
-#div <- ddply(alpha.div, c("treatment", "type"), summarise,
-#                   mean=mean(shan), sem=sd(shan)/sqrt(length(shan)))
-#div <- transform(div, lower=mean-sem, upper=mean+sem)
+div <- ddply(alpha.div, c("treatment", "type"), summarise,
+                   mean=mean(shan), sem=sd(shan)/sqrt(length(shan)))
+div <- transform(div, lower=mean-sem, upper=mean+sem)
 
 # Bargraph #
-#div.barplot<- ggplot(div, aes(x=type,y = mean, fill=treatment)) + 
-#  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1.5)  
+div.barplot<- ggplot(div, aes(x=type,y = mean, fill=treatment)) + 
+  geom_bar(width=0.5,colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1)  
 
 # Clean Bargraph figure #
-#div.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-#                              position=position_dodge(0.65), data=div, width = 0.2, size=1) +
-#  labs(x="Community Type", y="Shannon Diversity") +
-#  theme_classic() +
-#  scale_fill_manual(values=c("White", "Grey")) +
-#  theme(axis.text.y=element_text(colour="black", size=16),
-#        axis.text.x=element_text(colour="black", size =14),
-#        axis.title=element_text(size=18),
-#        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
-#        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
-#        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
-#        axis.ticks.length = unit(.25, "cm"),
-#        axis.ticks = element_line(size = 1.5),
-#        legend.title = element_text(size=18),
-#        legend.text=element_text(size=18))
+div.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=div, width = 0.2, size=1) +
+  labs(x="Community Type", y="Shannon Diversity") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Black")) +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =14),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18))
 ```
 
 
