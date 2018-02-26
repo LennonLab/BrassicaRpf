@@ -1,4 +1,4 @@
-ID,Treatment,soil,flower.count ,seed.count,SLA,height,abiomass,bbiomass,dweight,wweight,shoot.root,total.biomass
+ID,Treatment,soil,flower.count,seed.count,SLA,height,abiomass,bbiomass,dweight,wweight,shoot.root,total.biomass
 1,Rpf-,Sterilized,4,29,127.1428571,17.1,0.684,0.424,0.07,0.36,0.725344645,1.627
 2,Rpf-,Sterilized,22,74,154.4444444,29.6,1.768,0.72,0.09,0.39,2.455555556,2.488
 3,Rpf-,Sterilized,13,109,180,33.3,1.529,0.615,0.07,0.37,2.486178862,2.144

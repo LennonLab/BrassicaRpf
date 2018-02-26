@@ -1,0 +1,7 @@
+Sample,Treatment,pH
+1,Rpf+,5.4
+2,Rpf+,
+3,Rpf+,
+4,Rpf-,5.12
+5,Rpf-,
+6,Rpf-,
