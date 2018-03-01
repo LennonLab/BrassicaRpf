@@ -1,25 +1,32 @@
 ---
-title: "SoilCommunity"
+title: "Soil Bacterial Community"
 author: "Venus Kuo"
-date: "June 30, 2017"
+date: "Feb 26, 2018"
 output: html_document
 ---
 
-# 1) Question: How does Rpf treatment affect soil microbial alpha and beta diversity?
+# 1) Question
 
-Here, I will analyze the alpha and beta diversity of the active and total microbial community of week 6 Brassica planted potted soil. 
+How does Rpf treatment affect soil microbial alpha and beta diversity?
 
-# 2) Set up work environment and load dependencies 
+
+# 2) Set working environment and load packages
+
+- I sequenced the DNA and cDNA 16S rRNA gene to determine how Rpf treatment affected the soil bacterial community richness, diveristy, and composition at the end of the growth chamber experiment. 
+
+
+# 3) Set up work environment and load dependencies 
 
 ```{r, message=FALSE, warning=FALSE}
 # Setup work enviroment 
 rm(list = ls())
-setwd("C:/Users/Venus/GitHub/BrassicaRpf/analysis")
+setwd("~/../Github/BrassicaRpf/analysis")
 
 # Source code functions # 
-source("C:/Users/Venus/GitHub/BrassicaRpf/bin/DiversityFunctions.R")
-source("C:/Users/Venus/GitHub/BrassicaRpf/bin/MothurTools.R")
-source("C:/Users/Venus/GitHub/BrassicaRpf/bin/phylodiversity2.R")
+# Source code functions # 
+source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/DiversityFunctions.R")
+source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/MothurTools.R")
+source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/phylodiversity2.R")
 
 # Load dependencies # 
 package.list <- c('vegan', 'plyr' , 'ggplot2', 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn', 'indicspecies', 'viridis' ,  'BiodiversityR') 
@@ -42,7 +49,7 @@ ttest <- function(reg, coefnum, val){
 
 # 3) Describe and load data set
 
-.shared and .taxonomy file are outputs of alignment and clustering programing mothur that was run in IU mason. 
+- .shared and .taxonomy file are outputs of alignment and clustering programing mothur that was run in IU mason. 
 
 ```{r}
 ## Define Inputs
@@ -50,9 +57,9 @@ ttest <- function(reg, coefnum, val){
 # shared = OTU table from mothur with sequence similarity clustering
 # tax = Taxonomy for 97% similarity OTUs
 
-design <- "C:/Users/Venus/GitHub/BrassicaRpf/data/Brassica.design.txt"
-shared <- "C:/Users/Venus/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.shared"
-tax <- "C:/Users/Venus/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.0.03.taxonomy"
+design <- "C:/Users/vkuo/GitHub/BrassicaRpf/data/Brassica.design.txt"
+shared <- "C:/Users/vkuo/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.shared"
+tax <- "C:/Users/vkuo/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.0.03.taxonomy"
 
 # Run All: Select if all section are to be re-run
 run.all <- TRUE
@@ -71,30 +78,6 @@ OTU <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
 #OTU.tax <- read.tax(taxonomy = tax, format = "rdp")
 
 #OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.1")
-```
-
-# Make Maximum Liklihood tree using Fasttree
-
-Code below was used to run on Mason at IU to generate 
-```{r}
-#!/bin/bash
-#PBS -k o
-#PBS -l nodes=2:ppn=8,vmem=100gb,walltime=5:00:00
-#PBS -M vkuo@iu.edu
-#PBS -m abe
-#PBS -j oe
-
-#module load python/2.7.3
-#module load biopython/1.63
-#module load fasttree/2.1.1
-
-#cd /N/dc2/projects/Lennon_Sequences/2017BrassicaRpf
-
-#python name_change.py "Brassica.bac.final.0.03.rep.fasta" "Brassica.bac.final.0.03.rep.rename.fasta"
-
-#fasttree -gtr -nt -gamma -fastest Brassica.bac.final.0.03.rep.rename.fasta > Brassica.bac.rename.tree
-
-# Output: Brassica.bac.rename.tree.1
 ```
 
 
@@ -124,6 +107,7 @@ mean.good.c <- mean(goods.c.Brassica) # 0.98
 min.good.c <- min(goods.c.Brassica) # 0.96 
 # Coverage is good # 
 ```
+
 
 # 5) Alpha diversity
 
@@ -318,7 +302,7 @@ H <- function(x = ""){
 }
 
 shan <- round(apply(OTU, 1, H), 2)
-shan2 <- diversity(OTU, index = "shannon")
+#shan2 <- diversity(OTU, index = "shannon")
 
 alpha.div <- cbind(design, S.obs, shan)
 
@@ -456,7 +440,7 @@ plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
      xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
      ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""), line= 5,
      #xlab = "", ylab = "", xaxt = "n", yaxt = "n",
-     pch = 22, cex = 2.0, type = "n", cex.lab = 3, cex.axis = 2,
+     pch = 22, cex = 2.0, type = "n", cex.lab = 2.5, cex.axis = 3,
      axes = FALSE)
 
 # Add Axes
@@ -493,25 +477,24 @@ Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
 # Add points
 # Active community Rpf+
 points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
-       cex = 3, col = "black", bg = " blue")
+       cex = 3, col = "black", bg = "Black")
 # Active community Rpf-
 points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
-       cex = 3, col = "black", bg = "Green")   
+       cex = 3, col = "black", bg = "White")   
 # Total community Rpf+ 
 points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 22,
-       cex = 3, col = "black", bg = " blue")
+       cex = 3, col = "black", bg = "Black")
 # Total community Rpf-
 points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 22,
-       cex = 3, col = "black", bg = "Green")
+       cex = 3, col = "black", bg = "White")
 
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
 legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pch = c(21, 21, 22, 22),
-       pt.bg = c("Green", "blue", "Green", "blue"),
-       bty = "n", y.intersp = 1, pt.cex = 3, cex = 2)
-
+       pt.bg = c("White", "Black", "White", "Black"),
+       bty = "n", y.intersp = 1, pt.cex = 4, cex = 2)
 ```
 
 # Beta diversity hypothesis testing 

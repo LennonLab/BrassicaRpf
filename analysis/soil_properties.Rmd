@@ -1,15 +1,21 @@
 ---
 title: "nutrient"
 author: "Venus Kuo"
-date: "August 19, 2017"
+date: "Feb 26, 2018"
 output: html_document
 ---
 
-# 1) Question: What is the mechanism of Rpf effect on reducing plant productivity?
+# 1) Question
 
-I measured the concentration of C and N in the soil samples of Rpf- and Rpf+ live soil from week 1 and 6 pots. 
+Does Rpf treatment alter soil properties such as pH and nutrients?
 
-# 2) Set up work environment  
+
+# 2) Methods
+
+- I measured soil pH, C:N ratio, and phosorous from samples taken from week 5 of the growth chamber experiment.
+
+
+# 3) Set up work environment  
 
 ```{r, message=FALSE, warning=FALSE}
 # Setup work enviroment 
@@ -25,12 +31,17 @@ for (package in package.list) {
   } }
 ```
 
-# 3) Describe and load data set
 
-Text file containing the week, treatment, rep number, soil sample amount, and soil N and C amounts.
+# 4) Describe and load data set
+
+- CN: Text file containing the week, treatment, rep number, soil sample amount, and soil N and C amounts.
+
+- SoilpH: Text file containing treatment, rep number, pH
+
+- soilPhos: Text file containing treatment, rep number, inorganic P, organic P
 
 ```{r}
-# Read text file #
+# Read C:N ratio text file #
 CN <- read.delim("~/../Github/BrassicaRpf/data/CN.txt", sep = ",", head = TRUE)
 
 # Remove blank sample last row # 
@@ -47,7 +58,9 @@ CN$RelN <- (CN$Nitrogen/CN$SampleAmount)*100
 CN$RelC <- (CN$Carbon/CN$SampleAmount)*100
 ```
 
-# 4) Plot bargraph 
+# 5) Carbon and nitrogen ratio
+
+## Bargraph: C:N ratios
 
 ```{r}
 # Subset CN ratio # 
@@ -65,7 +78,7 @@ ratio.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
                               position=position_dodge(0.65), data=ratio.means.sem, width = 0.2, size=1) +
   labs(x="Week of Growth Chamber Experiment", y="CN ratio") +
   theme_classic() +
-  scale_fill_manual(values=c("White", "Grey")) +
+  scale_fill_manual(values=c("White", "Black")) +
   theme(axis.text.y=element_text(colour="black", size=16),
         axis.text.x=element_text(colour="black", size =14),
         axis.title=element_text(size=18),
