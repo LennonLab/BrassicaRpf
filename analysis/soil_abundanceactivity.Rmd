@@ -1,7 +1,7 @@
 ---
 title: "Soil Abundance Activity"
 author: "Venus Kuo"
-date: "Feb 26, 2018"
+date: "March 1, 2018"
 output: html_document
 ---
 # 1) Question
@@ -11,7 +11,7 @@ How does resuscitating the microbial seed bank affect soil microbial community a
 
 # 2) Methods
 
-- I extracted soil samples throughout the six-week growth chamber experiment to measure soil respiration and soil microbial (bacteria/fungal) abundance 
+I extracted soil samples throughout the six-week growth chamber experiment to measure soil respiration and soil microbial (bacteria/fungal) abundance 
 
 
 # 3) Set working environment and load packages
@@ -33,6 +33,7 @@ for (package in package.list) {
 # Load small function # 
 sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
 
+# Fancy Scientific function # 
 fancy_scientific <- function(l) {
      # turn in to character string in scientific notation
      l <- format(l, scientific = TRUE)
@@ -46,7 +47,7 @@ fancy_scientific <- function(l) {
 ```
 
 
-# 4) Load data and calculate corrected copy number 
+# 4) Load data 
 
 qPCR.txt : Bacterial (EUB 338f-515r) and fungal (5.8f-ITs4r) gene copy abundances in live soil DNA taken from experimental pots containing Brassica plants. Treatment, Rep, Week, Well position, and Gene copy amount.
 
@@ -87,7 +88,7 @@ Soil CO2 respiration by Rpf and sterilization treatment
 ## Line graph: Soil respiration
 
 ```{r}
-# Subsetting relevant data from CO2 dataset # 
+# Subsetting data from CO2 dataset # 
 CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6))
 
 # Change column names # 
@@ -101,34 +102,22 @@ CO2.m$variable <- as.factor(CO2.m$variable)
 CO2.values <- CO2.m$value
 CO2.m$StdCO2 <- CO2.values/24
 
-# Summarizing data # 
-CO2.means <- ddply(CO2.m, c("Treatment", "variable"), summarise, mean=mean(StdCO2))
-
-# Calculating standard error of the means # 
+# Calculating mean and sem # 
 CO2.means.sem <- ddply(CO2.m, c("Treatment", "variable"), summarise,
                    mean=mean(StdCO2), sem=sd(StdCO2)/sqrt(length(StdCO2)))
-
 CO2.means.sem <- transform(CO2.means.sem, lower=mean-sem, upper=mean+sem)
 
-
-
-# Plot line graph of summarized data # 
-resp.line <- ggplot(CO2.means, aes(x=variable, y=mean, color=Treatment)) + 
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), data=CO2.means.sem, width=.075) +
-    geom_line() +
-    geom_point(aes(shape=Treatment))
-
 # The errorbars overlapped, so use position_dodge to move them horizontally
-pd <- position_dodge(0) # move them .05 to the left and right
+pd <- position_dodge(0)
 
 # Plot line graph # 
-ggplot(CO2.means, aes(x=variable, y=mean, colour=Treatment, group=Treatment)) + 
+ggplot(CO2.means.sem, aes(x=variable, y=mean, colour=Treatment, group=Treatment)) + 
   geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0), 
                 data=CO2.means.sem, width = 0.2, size=1) +
     geom_line(position=pd, size=2) +
     geom_point(aes(shape=Treatment), position=pd, size=6, fill="White") +
     scale_shape_manual(values=c(16, 17)) +
-    xlab("Time (Weeks)") +
+    xlab("Time (weeks)") +
     ylab(expression(Soil~Respiration~(ppm~CO[2]~d^-1))) +
     theme_classic() +
     theme(axis.text.y=element_text(colour="black", size=18),
@@ -155,7 +144,6 @@ rich.cmp <- lme(value ~ variable*Treatment, random = ~ 1 | soil,
                 correlation = corCompSymm(form = ~1 | soil),
                 data = CO2.m)
 
-# Look at detailed output #
 #summary(rich.cmp)
 #summary(CO2.rm)
 
@@ -166,14 +154,6 @@ pander(anova(rich.cmp))
 # Make cleaner ANOVA table #
 set.caption("RMANOVA for soil CO2 respiration")
 pander(anova(CO2.rm))
-
-# Multiple comparision tests # 
-#Rpf.CO2.aov <- aov(value ~ variable*Treatment, data=CO2.m)
-#summary(Rpf.CO2.aov)
-#TukeyHSD(Rpf.CO2.aov)
-#pairwise.t.test(Rpf.CO2.aov, ses, p.adj = "none")
-#require(multcomp)
-#summary(glht(rich.cmp, linfct=mcp(Treatment = "Tukey")), test = adjusted(type = "bonferroni"))
 ```
 
 
@@ -206,8 +186,7 @@ bac.means.barplot +
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
         axis.ticks = element_line(size = 2)) +
-  scale_y_continuous(labels=fancy_scientific)#  +
-#  annotate("text", x = 0.6, y = 1750000, label = c("A"), size=12) 
+  scale_y_continuous(labels=fancy_scientific)
 ```
 
 ## Statistics: Bacterial abundance by Rpf treatment and week
@@ -250,8 +229,7 @@ ITS.mean.barplot +
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
         axis.ticks = element_line(size = 2)) +
-  scale_y_continuous(labels=fancy_scientific) #+
-#  annotate("text", x =0.6, y=2500000, label = c("B"), size=12)
+  scale_y_continuous(labels=fancy_scientific) 
 ```
 
 ## Statistics: Fungal abundance by Rpf treatment and week
@@ -261,9 +239,8 @@ ITS.mean.barplot +
 # Two Factor ANOVA of ITS Fungal gene copy abundances affected by Treatment and week of growth chamber experiment # 
 fun.aov <- aov(stdGeneCopy ~ Treatment, data=ITS.abundance)
 summary(fun.aov)
-#TukeyHSD(fun.aov)
-# Results: Highly significant main effect of time.
-# Nonsignificant main effect of Rpf and interaction effect.
+TukeyHSD(fun.aov)
+# Results: Significant effect of Rpf on fungi abundance (p=0.0048,F=10.71,df=1,16) # 
 ```
 
 ## Make x-y plot of microbial abundance with error bars by treatment with individual data points 
@@ -300,7 +277,7 @@ fun.sem <- aggregate(data.sub.fun$stdGeneCopy ~ Treatment, data.sub.fun, sem)
 #fun.table <- data.frame(fun.mean[1], fun.mean[2], fun.sem[2],
 #          fun.sem.LL[1], fun.sem.UL[1])
 
-bac.95.LL <- aggregate(stdGeneCopy ~ Treatment, data.sub.bac,
+bac.95.LL <- aggregate(stdGeneCopy ~ Treatment, data.sub.bac, # For 95% CI 
           FUN = function(x) t.test(x)$conf.int[1])
 bac.95.UL <- aggregate(stdGeneCopy ~ Treatment, data.sub.bac,
           FUN = function(x) t.test(x)$conf.int[2])
@@ -314,7 +291,6 @@ fun.95.UL <- aggregate(stdGeneCopy ~ Treatment, data.sub.fun,
 fun.table <- data.frame(fun.mean[1], fun.mean[2], fun.sem[2],
           fun.95.LL[2], fun.95.UL[2])
 
-
 colnames(bac.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
 bac.table <- bac.table[order(bac.table$mean),]
 
@@ -324,10 +300,7 @@ fun.table <- fun.table[order(fun.table$mean),]
 # Combine count table # 
 abundance.table <- rbind(bac.table, fun.table)
 abundance.table <- abundance.table[c(1,2,4,3),] 
-```
 
-
-```{r}
 # Generating figure # 
 png(filename="../figures/Figure3-Microbialabundance.CI.png",
     width = 800, height = 800, res = 96*2)

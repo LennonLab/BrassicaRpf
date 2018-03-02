@@ -1,7 +1,7 @@
 ---
 title: "Brassica Plant"
 author: "Venus Kuo"
-date: "Feb 28, 2018"
+date: "March 1, 2018"
 output: pdf_document
 ---
 
@@ -119,8 +119,7 @@ flower.mean.barplot +
         axis.title.x = element_text(colour="black",  margin = margin(15,10,0,10)),
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
-        axis.ticks = element_line(size = 2)) +
- annotate("text", x =0.575, y=10.5, label = c("A"), size=12)
+        axis.ticks = element_line(size = 2)) 
 ```
 
 ## Statistics: Flower count
@@ -142,10 +141,10 @@ flower.con <- data[ which(data$Treatment == "Rpf-"),]
 # Flower count table #
 flower.mean <- aggregate(data$flower.count ~ Treatment, data, mean)
 flower.sem <- aggregate(data$flower.count ~ Treatment, data, sem)
-flower.sem.LL <- flower.mean[2] + flower.sem[2]
+flower.sem.LL <- flower.mean[2] + flower.sem[2]   # For SEM 
 flower.sem.UL <- flower.mean[2] - flower.sem[2]
 
-#flower.95.LL <- aggregate(flower.count ~ Treatment, data,
+#flower.95.LL <- aggregate(flower.count ~ Treatment, data,   # For 95% CI
 #          FUN = function(x) t.test(x)$conf.int[1])
 #flower.95.UL <- aggregate(flower.count ~ Treatment, data,
 #          FUN = function(x) t.test(x)$conf.int[2])
@@ -178,7 +177,7 @@ points(2, mean(flower.con$flower.count), pch = 21, col = "black",
 
 box(lwd = 2)
 
-mtext(expression('Flower Number / Plant'), side = 2,
+mtext(expression('Flower Number'), side = 2,
       outer = FALSE, cex = 1.5, line = 3, adj = 0.5)
 
 # Major Axes
@@ -199,7 +198,7 @@ arrows(x0 = c(1,2), y0 = flower.table$mean, y1 = flower.table$LCI, angle = 90,
 arrows(x0 = c(1,2), y0 = flower.table$mean, y1 = flower.table$UCI, angle = 90,
        length=0.25, lwd = 2)
 
-text(0.7,14 ,labels="A", col="black", cex=2)
+text(0.7,14 ,labels="B", col="black", cex=2)
 
 # Close Plot Device
 dev.off()
@@ -430,10 +429,6 @@ shoot.table <- shoot.table[order(shoot.table$mean),]
 # Combine count table # 
 biomass.table <- rbind(root.table, shoot.table)
 
-```
-
-
-```{r}
 # Generating figure # 
 png(filename="../figures/Figure2-Plantbiomass.png",
     width = 800, height = 800, res = 96*2)
@@ -471,13 +466,10 @@ mtext(expression('Root           Shoot'), side = 1,
 # Major Axes
 axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
      labels = c("0", "0.3", "0.6", "0.9", "1.2", "1.5"), at = c(0, 0.3, 0.6, 0.9, 1.2, 1.5))
-
 axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at=c(0, 0.3, 0.6, 0.9, 1.2, 1.5), labels = F, tck = -0.02)
-
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
      labels = c("Rpf+", "Rpf-", "Rpf+", "Rpf-"), at = c(1, 2, 3, 4))
-
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2, 3, 4), labels = F, tck = -0.02)
 
@@ -487,8 +479,6 @@ arrows(x0 = c(1,2,3,4), y0 = biomass.table$mean, y1 = biomass.table$UCI, angle =
        length=0.25, lwd = 2)
 
 text(0.9,1.375 ,labels="A", col="black", cex=2)
-
-#abline(v=2.5, col="black", lty= 2, lwd = 2)
 
 # Close Plot Device
 dev.off()

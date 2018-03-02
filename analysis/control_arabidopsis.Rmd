@@ -1,17 +1,21 @@
 ---
 title: "Arabidopsis plate biomass"
 author: "Venus Kuo"
-date: "August 19, 2017"
+date: "March 1, 2018"
 output: html_document
 ---
 
-# 1) Question: Does Rpf alter plant productivity and fitness directly or indirectly?
+# 1) Question
 
-Rpf treatment to soil decreased plant biomass, but I wanted to test whether Rpf protein had a direct effect on plant biomass. 
+To determine whether direct application of Rpf alters biomass. 
 
-I plated sterile A. thaliana plants on agar media for 5 weeks and applied Rpf protein directly to the plate every week. I recorded plate pictures and measured relative biomass using Adobe Photoshop 2017 cc. 
 
-# 2) Set up work environment  
+# 2) Methods
+
+As a control to confirm the neutral effect of Rpf protein on plant biomass, I plated Arabidopsis thalina seeds on MS agar media for 5 weeks and directly applied Rpf to the plate every week. At the end of the experiment, I took plate pictures and estimated relative plant biomass using Adobe Photoshop 2017 cc. 
+
+
+# 3) Set up work environment  
 
 ```{r, message=FALSE, warning=FALSE}
 # Setup work enviroment 
@@ -27,7 +31,8 @@ for (package in package.list) {
   } }
 ```
 
-# 3) Describe and load data set
+
+# 4) Describe and load data set
 
 Read text file of relative biomass fo A. thaliana on plates between Rpf+ and Rpf- treatment.
 
@@ -36,14 +41,17 @@ Read text file of relative biomass fo A. thaliana on plates between Rpf+ and Rpf
 seedling <- read.delim("~/../Github/BrassicaRpf/data/seedlingbiomass.txt", sep = ",", head = TRUE)
 
 # Look at data set # 
-str(seedling)
+#str(seedling)
 
 # Calculate relative biomass # 
 seedling$Biomass <- (seedling$BiomassPixel)/(seedling$PlatePixel)
 seedling$RelativeBiomass <- (seedling$Biomass)/(seedling$Seedlings)*100
 ```
 
-# 4) Plot bargraph of A. thaliana biomass with treatment
+
+# 5) Arabidopsis thaliana seedling biomass
+
+## Bargraph: Seedling biomass with Rpf treatment
 
 ```{r}
 # Calculate biomass means and standard errors of the means # 
@@ -55,31 +63,30 @@ seedling.means.sem <- transform(seedling.means.sem, lower=mean-sem, upper=mean+s
 seedling.barplot <- ggplot(seedling.means.sem, aes(x=Treatment,y = mean)) + 
   geom_bar(width=0.5, colour="black", fill="white" , position = position_dodge(width = 0.65), stat = "identity", size=1)
 
-# Clean Bargraph figure #
-seedling.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0.65), data=seedling.means.sem, width = 0.2, size=1) +
-  labs(x="Treatment", y="Relative Biomass") +
+seedling.barplot + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
+                data=seedling.means.sem, width = 0.2, size=1) +
+  labs(y="Relative Seedling Biomass") +
   theme_classic() +
-  scale_fill_manual(values=c("White", "Black")) +
-  theme(axis.text.y=element_text(colour="black", size=16),
-        axis.text.x=element_text(colour="black", size =14),
-        axis.title=element_text(size=18),
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=20),
         axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
-        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
+        axis.title.x=element_blank(),
         panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
-        axis.ticks = element_line(size = 1.5),
-        legend.title = element_text(size=18),
-        legend.text=element_text(size=18))
+        axis.ticks = element_line(size = 1.5))
 
+ggsave("../figures/SupplementaryFig1-Arabidopsiscontrol.png", width = 20, height = 15, units = "cm")
 ```
 
-# 5) Statistical test of relative biomass
+## Statistics: Seedling biomass with Rpf treatment
 
 ```{r}
 anova <- aov(seedling$RelativeBiomass ~ seedling$Treatment, data = seedling)
-summary(anova) # Treatment significantly affected OD600
-TukeyHSD(anova) # 2.02 dif increase from E54A to WT Rpf
+summary(anova) 
+TukeyHSD(anova) 
+# Results: Rpf did not significantly affect relative biomass (p=0.321, F=1.214, DF=1,5)
 ```
 
 
