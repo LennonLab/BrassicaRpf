@@ -129,7 +129,7 @@ ggplot(CO2.means.sem, aes(x=variable, y=mean, colour=Treatment, group=Treatment)
           legend.title = element_text(size=15)) +
     scale_color_manual(values=c('Black','Black')) 
 
-ggsave("../figures/Figure3-Soilrespiration.png", width = 20, height = 15, units = "cm")
+ggsave("../figures/Figure2-Soilrespiration.png", width = 20, height = 15, units = "cm")
 ```
 
 ## Statistics: Soil microbial respiration 
@@ -364,6 +364,65 @@ graphics.off()
 img <- readPNG("../figures/Figure3-Microbialabundance.CI.png")
 grid.raster(img)
 ```
+
+
+# 7) Fungi: Bacteria ratios 
+
+## Calculate F:B ratio 
+
+```{r}
+# Calculating F : B ratios #
+gca.B <- bac.abundance$stdGeneCopy
+gca.F <- ITS.abundance$stdGeneCopy
+abundance$FB <- (gca.F/gca.B)
+```
+
+## Plot F:B ratio
+
+```{r}
+# Calculating mean and sem # 
+FB.means.sem <- ddply(abundance, c("Treatment"), summarise,
+                   mean=mean(FB), sem=sd(FB)/sqrt(length(FB)))
+FB.means.sem <- transform(FB.means.sem, lower=mean-sem, upper=mean+sem)
+
+# Barplot of Fungal FB abundance in soil # 
+FB.mean.barplot<- ggplot(FB.means.sem, aes(x=Treatment ,y = mean)) +
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1) 
+
+# Barplot of fungal gene abundance in soil for pub figures # 
+FB.mean.barplot + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
+                data=FB.means.sem, width = 0.2, size=1) +
+  labs(x="Treatment", y="F : B ratio") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title.y = element_text(size = 19, colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(size = 20, colour="black",margin=margin(15,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) 
+
+ggsave("../figures/Figure4-FBratio.png", width = 20, height = 15, units = "cm")
+
+```
+
+## Statistic: F:B ratio
+
+```{r}
+# F:B ratio #
+# One factor ANOVA to test effect of Rpf on F:B ratio # 
+FB.aov <- aov(FB ~ Treatment, data=abundance)
+summary(FB.aov)
+TukeyHSD(FB.aov)
+# Results: Significant effect of Rpf on F:B ratio (F=17.2, p =0.0002, df = 1,34) # 
+```
+
+
+
+
+
+
 
 
 

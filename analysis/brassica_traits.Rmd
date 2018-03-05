@@ -205,7 +205,7 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/Figure1-Flower.count.png")
+img <- readPNG("../figures/Figure1B-Flower.count.png")
 grid.raster(img)
 ```
 
@@ -485,7 +485,7 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/Figure2-Plantbiomass.png")
+img <- readPNG("../figures/Figure1A-Plantbiomass.png")
 grid.raster(img)
 ```
 

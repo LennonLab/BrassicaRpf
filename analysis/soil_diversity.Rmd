@@ -379,7 +379,7 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/FigureS4-Ordination.png")
+img <- readPNG("../figures/Figure5-Ordination.png")
 grid.raster(img)
 ```
 
