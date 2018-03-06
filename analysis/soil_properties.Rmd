@@ -12,7 +12,7 @@ Does Rpf treatment alter soil properties such as pH and nutrients?
 
 # 2) Methods
 
-- I measured soil pH, C:N ratio, and phosorous from samples taken from week 5 of the growth chamber experiment.
+I measured soil pH, C:N ratio, and phosorous from samples taken from week 5 of the growth chamber experiment.
 
 
 # 3) Set up work environment  
@@ -56,6 +56,8 @@ CN$Ratio <- ((CN$Carbon/CN$Nitrogen)/CN$SampleAmount)
 # Relativeize the N and C concetration by sample amount # 
 CN$RelN <- (CN$Nitrogen/CN$SampleAmount)*100
 CN$RelC <- (CN$Carbon/CN$SampleAmount)*100
+
+ph <- read.delim("~/../Github/BrassicaRpf/data/SoilpH.txt", sep = ",", head = TRUE)
 ```
 
 # 5) Carbon and nitrogen ratio
@@ -67,38 +69,79 @@ CN$RelC <- (CN$Carbon/CN$SampleAmount)*100
 CN <- subset(CN, Week == "6")
 
 # Bargraph of CN ratio # 
-ratio.means.sem <- ddply(CN, c("Treatment", "Week"), summarise,
+ratio.means.sem <- ddply(CN, c("Treatment"), summarise,
                    mean=mean(Ratio), sem=sd(Ratio)/sqrt(length(Ratio)))
 ratio.means.sem <- transform(ratio.means.sem, lower=mean-sem, upper=mean+sem)
 
-ratio.barplot<- ggplot(ratio.means.sem, aes(x=Week,y = mean, fill=Treatment)) + 
+ratio.barplot<- ggplot(ratio.means.sem, aes(x=Treatment,y = mean)) + 
   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1)  
 
-ratio.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
-                              position=position_dodge(0.65), data=ratio.means.sem, width = 0.2, size=1) +
-  labs(x="Week of Growth Chamber Experiment", y="CN ratio") +
+ratio.barplot + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
+                data=ratio.means.sem, width = 0.2, size=1) +
+  labs(y="CN ratio") +
   theme_classic() +
-  scale_fill_manual(values=c("White", "Black")) +
   theme(axis.text.y=element_text(colour="black", size=16),
-        axis.text.x=element_text(colour="black", size =14),
-        axis.title=element_text(size=18),
+        axis.text.x=element_text(colour="black", size=20),
+        axis.title.x=element_blank(),
+        axis.title = element_text(size=18),
         axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
-        axis.title.x = element_text(colour="black",margin=margin(10,0,0,0)),
         panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
         axis.ticks.length = unit(.25, "cm"),
-        axis.ticks = element_line(size = 1.5),
-        legend.title = element_text(size=18),
-        legend.text=element_text(size=18))
+        axis.ticks = element_line(size = 1.5))
 
+ggsave("../figures/SupplmentaryFigure2-CNratio.png", width = 20, height = 15, units = "cm")
 ```
 
-# 5) Statistical test 
+## Statistical test: C:N ratio
 
 ```{r}
 # Two factor ANOVA of ratio CN #
 anova <- aov(CN$Ratio ~ CN$Treatment, data = CN)
 summary(anova) 
 TukeyHSD(anova) 
-
 ```
+
+
+# 6) Soil pH
+
+## Bargraph: Effect of Rpf on soil pH 
+
+```{r}
+# Bargraph of CN ratio # 
+pH.means.sem <- ddply(ph, c("Treatment"), summarise,
+                   mean=mean(pH), sem=sd(pH)/sqrt(length(pH)))
+pH.means.sem <- transform(pH.means.sem, lower=mean-sem, upper=mean+sem)
+
+pH.barplot<- ggplot(pH.means.sem, aes(x=Treatment,y = mean)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1)  
+
+pH.barplot + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
+                data=pH.means.sem, width = 0.2, size=1) +
+  labs(y="Soil pH") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=16),
+        axis.text.x=element_text(colour="black", size=20),
+        axis.title.x=element_blank(),
+        axis.title = element_text(size=18),
+        axis.title.y = element_text(colour="black",  margin = margin(0,15,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=1.5, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 1.5))
+
+ggsave("../figures/SupplmentaryFigure3-soilph.png", width = 20, height = 15, units = "cm")
+```
+
+## Statistical test: Rpf effect on soil pH
+
+```{r}
+# Two factor ANOVA of ratio CN #
+anova <- aov(pH ~ Treatment, data = ph)
+summary(anova) 
+TukeyHSD(anova) 
+```
+
+
+
 

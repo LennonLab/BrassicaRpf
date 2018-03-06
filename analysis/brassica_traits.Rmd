@@ -430,18 +430,18 @@ shoot.table <- shoot.table[order(shoot.table$mean),]
 biomass.table <- rbind(root.table, shoot.table)
 
 # Generating figure # 
-png(filename="../figures/Figure2-Plantbiomass.png",
+png(filename="../figures/Figure1A-Plantbiomass.png",
     width = 800, height = 800, res = 96*2)
 
 par(mar = c(5, 5, 1, 1))
 
 biomass.fig <- plot(jitter(rep(1, length(root.rpf$value)), amount = 0.1), root.rpf$value, 
-      ylim = c(0, 1.5), xlim = c(0.5, 4.5), pch = 21, col = "grey25", bg = "grey25", lwd = 3.5,
+      ylim = c(0, 1.5), xlim = c(0.5, 4.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
       cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
       las = 1, ylab = "", xlab = "")
       box(lwd = 2)
 points(jitter(rep(2, length(root.con$value)), amount = 0.1), root.con$value, pch = 21, 
-       bg = "grey25", col = "grey25", lwd = 2, cex = 1.7)
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
 points(jitter(rep(3, length(shoot.rpf$value)), amount = 0.1), shoot.rpf$value, pch = 21, 
        bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
 points(jitter(rep(4, length(shoot.con$value)), amount = 0.1),shoot.con$value, pch = 21, 
@@ -479,6 +479,8 @@ arrows(x0 = c(1,2,3,4), y0 = biomass.table$mean, y1 = biomass.table$UCI, angle =
        length=0.25, lwd = 2)
 
 text(0.9,1.375 ,labels="A", col="black", cex=2)
+
+abline(v=2.5,col="Black",lty=2, lwd=3)
 
 # Close Plot Device
 dev.off()

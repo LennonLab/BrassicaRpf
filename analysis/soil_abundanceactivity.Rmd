@@ -310,12 +310,12 @@ png(filename="../figures/Figure3-Microbialabundance.CI.png",
 par(mar=c(5,5,1,1))
 
 biomass.fig <- plot(jitter(rep(1, length(bac.rpf$value)), amount = 0.1), bac.rpf$value, 
-      ylim = c(0, 2.5E6), xlim = c(0.5, 4.5), pch = 21, col = "grey25", bg = "grey25", lwd = 3.5,
+      ylim = c(0, 2.5E6), xlim = c(0.5, 4.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
       cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
       las = 1, ylab = "", xlab = "")
       box(lwd = 2)
 points(jitter(rep(2, length(bac.con$value)), amount = 0.1), bac.con$value, pch = 21, 
-       bg = "grey25", col = "grey25", lwd = 2, cex = 1.7)
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
 points(jitter(rep(3, length(fun.rpf$value)), amount = 0.1), fun.rpf$value, pch = 21, 
        bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
 points(jitter(rep(4, length(fun.con$value)), amount = 0.1),fun.con$value, pch = 21, 
@@ -355,6 +355,8 @@ arrows(x0 = c(1,2,3,4), y0 = abundance.table$mean, y1 = abundance.table$LCI, ang
        length = 0.25, lwd = 2)
 arrows(x0 = c(1,2,3,4), y0 = abundance.table$mean, y1 = abundance.table$UCI, angle = 90,
        length=0.25, lwd = 2)
+
+abline(v=2.5,col="Black",lty=2, lwd=3)
 
 # Close Plot Device
 dev.off()
@@ -416,6 +418,8 @@ FB.aov <- aov(FB ~ Treatment, data=abundance)
 summary(FB.aov)
 TukeyHSD(FB.aov)
 # Results: Significant effect of Rpf on F:B ratio (F=17.2, p =0.0002, df = 1,34) # 
+x <- (0.61-0.16)/0.16
+x
 ```
 
 
