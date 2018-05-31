@@ -1,7 +1,7 @@
 Sample,Treatment,rep,pH
 1,Rpf+,1,5.40
-2,Rpf+,2,5.17
-3,Rpf+,3,5.28
+2,Rpf+,2,
+3,Rpf+,3,
 4,Rpf-,1,5.12
-5,Rpf-,2,5.58
-6,Rpf-,3,4.7
+5,Rpf-,2,
+6,Rpf-,3,

@@ -23,7 +23,7 @@ getwd()
 setwd("~/../Github/BrassicaRpf/data")
 
 # Require or install packages #
-package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'png', 'MullerPlot', 'RColorBrewer', 'pander', 'reshape', 'nlme') 
+package.list <- c('plyr', 'grid' ,'png', 'car', 'bbmle', 'ggplot2', 'vegan', 'tidyr', 'dplyr', 'codyn', 'cowplot', 'MullerPlot', 'RColorBrewer', 'pander', 'reshape', 'nlme') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -197,6 +197,8 @@ bac.aov <- aov(stdGeneCopy ~ Treatment, data=bac.abundance)
 summary(bac.aov)
 TukeyHSD(bac.aov)
 # Results: Significant effect of Rpf p=0.01, F= 7.407, DF=1,34 
+z <- 1683463-1187385
+z
 ```
 
 
@@ -241,6 +243,8 @@ fun.aov <- aov(stdGeneCopy ~ Treatment, data=ITS.abundance)
 summary(fun.aov)
 TukeyHSD(fun.aov)
 # Results: Significant effect of Rpf on fungi abundance (p=0.0048,F=10.71,df=1,16) # 
+y <- 618388.7-236624.1
+y
 ```
 
 ## Make x-y plot of microbial abundance with error bars by treatment with individual data points 
