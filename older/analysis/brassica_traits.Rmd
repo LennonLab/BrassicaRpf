@@ -1,0 +1,621 @@
+---
+title: "Brassica Plant"
+author: "Venus Kuo"
+date: "March 1, 2018"
+output: pdf_document
+---
+
+# 1) Question
+
+How does resuscitating the microbial seed bank affect plant traits?
+
+
+# 2) Methods
+
+- I performed a factoral experiment testing the effect of Rpf (Rpf-/+) and soil sterilization (live/sterilized) treatment on plant reproductive and   biomass production. 
+
+
+# 3) Set working environment and load packages
+
+```{r, message=FALSE, warning=FALSE}
+# Set working directory #
+rm(list = ls())
+getwd()
+setwd("~/../Github/BrassicaRpf/data") # Specific to Venus's computer
+
+# Require or install packages #
+package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'reshape', 'grid', 'png', 'car', 'bbmle', 'reshape2', 'ggplot2') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+```
+
+
+# 4) Load and describe data set
+
+plantfitness : ID, Treatment (Rpf+/Rpf-), soil type (live/sterilized), flower.count, seed.count, SLA (Specific leaf area), height, abiomass (above ground biomass), bbiomass (below ground biomass), dweight (dry weight), wweight (wet weight), shoot.root (shoot:root ratio), total.biomass
+
+```{r, message=FALSE, warning=FALSE}
+setwd("~/../Github/BrassicaRpf/data") 
+
+# Load txt file # 
+data <- read.delim("plantfitness.txt", sep = ",", header = TRUE)
+
+# Remove incorrectly handled sample #
+data <- data[-33, ] 
+
+# Remove soil sterilization treatment from dataset # 
+data <- subset(data, soil == "Live")
+```
+
+
+# 5) Brassica rapa reproductive output figure and statistics
+
+## Bargraph: Seed Production
+
+```{r}
+# Calculating standard error #
+seed.mean.sem <- ddply(data, c("Treatment"), summarise, 
+                   mean=mean(seed.count), sem=sd(seed.count)/sqrt(length(seed.count)))
+seed.mean.sem <- transform(seed.mean.sem, lower=mean-sem, upper=mean+sem) 
+
+# Barplot of mean seed counts #
+seed.mean.barplot <- ggplot(seed.mean.sem, aes(x=Treatment, y = mean)) + 
+  geom_bar(width=0.5, colour = "black", position = position_dodge(width = 0.65), 
+           stat = "identity", size=1, fill=c("white", "grey30")) 
+
+seed.mean.barplot + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), position = position_dodge(width = 0.65), 
+                data=seed.mean.sem, width = 0.2, size = 1) +
+  labs(x = "Treatment", y="Seeds Produced/Plant") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",  margin = margin(15,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) #+
+#  annotate("text", x =0.575, y=65, label = c("A"), size=12)
+```
+
+## Statistics: Seed count
+
+```{r}
+# Two-factor ANOVA of the effect of treatment and soil type on seed count # 
+seed.aov <- anova(lm(seed.count ~ Treatment, data=data))
+seed.aov
+# Results: No significant main effect of Rpf or interaction effect p = 0.42, F= 0.69 
+```
+
+
+## Bargraph: Flower Production
+
+```{r}
+# Calculating standard error of the mean for flower production # 
+flower.mean.sem <- ddply(data, c("Treatment"), summarise,
+                   mean=mean(flower.count), sem=sd(flower.count)/sqrt(length(flower.count)))
+flower.mean.sem <- transform(flower.mean.sem, lower=mean-sem, upper=mean+sem)
+
+# Barplot of flower production by soil type and treatment
+flower.mean.barplot <- ggplot(flower.mean.sem, aes(x=Treatment, y = mean)) + 
+  geom_bar(width=0.5, colour = "black", position = position_dodge(width = 0.65), 
+           stat = "identity", size=1, fill=c("white", "grey30"))
+
+flower.mean.barplot + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(.65), 
+                data=flower.mean.sem, width = 0.2, size=1) +
+  labs(x = "Treatment" , y="Flowers Produced/Plant") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",  margin = margin(15,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) 
+```
+
+## Statistics: Flower count
+
+```{r}
+# Two-factor ANOVA of the effect of treatment and soil type on seed count # 
+flower.aov <- anova(lm(flower.count ~ Treatment, data=data))
+flower.aov
+# Results: Marginally nonsignificant effect of Rpf treatment p = 0.0942, F = 3.2234
+```
+
+## Make x-y plot with error bars by treatment with individual data points
+
+```{r}
+# Flower count data for plotting # 
+flower.rpf <- data[ which(data$Treatment == "Rpf+"),]
+flower.con <- data[ which(data$Treatment == "Rpf-"),]
+
+# Flower count table #
+flower.mean <- aggregate(data$flower.count ~ Treatment, data, mean)
+flower.sem <- aggregate(data$flower.count ~ Treatment, data, sem)
+flower.sem.LL <- flower.mean[2] + flower.sem[2]   # For SEM 
+flower.sem.UL <- flower.mean[2] - flower.sem[2]
+
+#flower.95.LL <- aggregate(flower.count ~ Treatment, data,   # For 95% CI
+#          FUN = function(x) t.test(x)$conf.int[1])
+#flower.95.UL <- aggregate(flower.count ~ Treatment, data,
+#          FUN = function(x) t.test(x)$conf.int[2])
+#flower.table <- data.frame(flower.mean[1], flower.mean[2], flower.sem[2],
+#          flower.95.LL[2], flower.95.UL[2])
+
+flower.table <- data.frame(flower.mean[1], flower.mean[2], flower.sem[2],
+          flower.sem.LL[1], flower.sem.UL[1])
+colnames(flower.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+flower.table <- flower.table[order(flower.table$mean),]
+
+# Generating figure # 
+png(filename="../figures/Figure1-Flower.count.png",
+    width = 800, height = 800, res = 96*2)
+
+par(mar = c(4, 5, 1, 1))
+
+flowercount.fig <- plot(jitter(rep(1, length(flower.rpf$flower.count)), amount = 0.1), flower.rpf$flower.count, 
+      ylim = c(0, 15), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(flower.con$flower.count)), amount = 0.1), flower.con$flower.count, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+points(1, mean(flower.rpf$flower.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(flower.con$flower.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+mtext(expression('Flower Number'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "3", "6", "9", "12", "15"), at = c(0, 3, 6, 9, 12, 15))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 3, 6, 9, 12, 15), labels = F, tck = -0.02)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     labels = c("Rpf+", "Rpf-"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.02)
+
+arrows(x0 = c(1,2), y0 = flower.table$mean, y1 = flower.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(1,2), y0 = flower.table$mean, y1 = flower.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+text(0.7,14 ,labels="B", col="black", cex=2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Figure1B-Flower.count.png")
+grid.raster(img)
+```
+
+
+# 6) Brassica rapa total plant biomass 
+
+## Bargraph: Total Plant Biomass
+
+```{r}
+# Calculating standard error of means for total plant biomass #
+plantmeans.sem <- ddply(data, c("Treatment"), summarise,
+                   mean=mean(total.biomass), sem=sd(total.biomass)/sqrt(length(total.biomass)))
+plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
+
+# Barplot of total plant biomass #
+plantmeans.barplot<- ggplot(plantmeans.sem, aes(x= Treatment , y = mean)) + 
+   geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), 
+            stat = "identity", size=1, fill=c("white", "grey30"))
+
+plantmeans.barplot + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
+                data=plantmeans.sem, width = 0.2, size=1) +
+  labs(x = "Treatment", y="Total Plant Biomass (g)") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(15,1,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) + 
+  annotate("text", x =0.575, y=2, label = c("B"), size=12)
+```
+
+## Statistics: Total plant biomass
+
+```{r}
+# Two-factor ANOVA of total biomass with treatment and soil type # 
+plant.t.aov <- anova(lm(total.biomass ~ Treatment, data=data))
+plant.t.aov
+# Results: Significant main effect of Rpf, p = 0.0132, F=8.0455
+```
+
+# 7) Brassica rapa below-ground (root) biomass 
+
+## Bargraph: Root Biomass
+
+```{r}
+# Calculating standard error of means for total plant biomass #
+plantmeans.sem <- ddply(data, c("Treatment"), summarise,
+                   mean=mean(bbiomass), sem=sd(bbiomass)/sqrt(length(bbiomass)))
+plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
+
+# Plotting bar graph # 
+live.biomass.bar <- ggplot(plantmeans.sem, aes(x = Treatment, y = mean)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), 
+           stat = "identity", size=1, fill=c("white", "grey30"))
+
+# Plotting bargraph # 
+live.biomass.bar  + geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
+                                  data=plantmeans.sem, width = 0.2, size=1) +
+  labs(x="Treatment", y="Plant Root Biomass (g)") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) +
+  annotate("text", x =0.575, y=1.055, label = c("C"), size=12)
+```
+
+## Stastistics: Root biomass
+
+```{r}
+# Two-factor ANOVA of root biomass with treatment and soil type # 
+plant.b.aov <- anova(lm(bbiomass ~ Treatment, data=data))
+plant.b.aov
+# Results: Signficant main effect of Rpf (p=0.037, F=5.298)
+```
+
+# 8) Brassica rapa above-ground biomass 
+
+## Bargraph: Above-ground biomass
+
+```{r}
+# Calculating standard error of means for total plant biomass #
+plantmeans.a.sem <- ddply(data, c("Treatment"), summarise,
+                   mean=mean(abiomass), sem=sd(abiomass)/sqrt(length(abiomass)))
+plantmeans.a.sem <- transform(plantmeans.a.sem, lower=mean-sem, upper=mean+sem)
+
+# Barplot of total plant biomass #
+plantmeans.a.barplot <- ggplot(plantmeans.a.sem, aes(x = Treatment, y = mean)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1, fill = c("White", "Grey30"))
+
+# Bargraph #
+plantmeans.a.barplot + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=plantmeans.a.sem, width = 0.2, size=1) +
+  labs(x="Treatment", y="Above-ground Biomass (g)") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =18),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(5,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) + 
+  annotate("text", x =0.575, y=1.025, label = c("D"), size=12)
+```
+
+
+## Stastistics: Above-ground biomass
+
+```{r}
+# Two-factor ANOVA of above-ground biomass with treatment and soil type # 
+plant.a.aov <- anova(lm(abiomass ~ Treatment, data=data))
+plant.a.aov
+# Results: Significant effect of treatment p = 0.017, F= 7.3118
+```
+
+## Below- and above-ground plant biomass in the same figure
+
+```{r}
+# Subsetting data set # 
+plant.sub.ab <- subset(data, select=(c(Treatment, abiomass, bbiomass)))
+
+# Combining the above and belowground biomass # 
+plant.m <- melt(plant.sub.ab) 
+
+# Summarizing means of plant biomass data # 
+plant.m.means <- ddply(plant.m, c("Treatment", "variable"), summarise, mean=mean(value))
+
+# Plotting stacked bar graph # 
+live.biomass.bar <- ggplot(plant.m.means, aes(x = variable, y = mean, fill = Treatment)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1)
+
+# Calculating standard error of means for total plant biomass #
+plantmeans.sem <- ddply(plant.m, c("Treatment", "variable"), summarise,
+                   mean=mean(value), sem=sd(value)/sqrt(length(value)))
+plantmeans.sem <- transform(plantmeans.sem, lower=mean-sem, upper=mean+sem)
+
+# Create label for axis.label.x # 
+label <- c("Above-ground", "Below-ground")
+
+# Plotting stacked bargraph # 
+live.biomass.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=plantmeans.sem, width = 0.2, size=1) +
+  labs(x =  "Plant Section" ,y="Plant Biomass (g)") +
+  theme_classic() +
+  scale_fill_manual(values=c("White", "Grey30")) +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(15,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2),
+        legend.title = element_text(size=18),
+        legend.text=element_text(size=18),
+        legend.position = c(0.875, 0.85))+
+  annotate("text", x =0.575, y=1.05, label = c("B"), size=12) +
+  scale_x_discrete(labels = label)
+```
+
+
+## Make x-y plot of biomass change with error bars by treatment with individual data points 
+
+```{r}
+# Subsetting data set # 
+data.sub <- subset(data, select=(c(Treatment, abiomass, bbiomass)))
+
+# Combining the above and belowground biomass # 
+data.m <- melt(data.sub) 
+
+# Biomass count data for plotting # 
+root.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$variable == "bbiomass"),]
+root.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$variable == "bbiomass"),]
+shoot.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$variable == "abiomass"),]
+shoot.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$variable == "abiomass"),]
+
+# Plant biomass count table #
+root.mean <- aggregate(data$bbiomass ~ Treatment, data, mean)
+root.sem <- aggregate(data$bbiomass ~ Treatment, data, sem)
+shoot.mean <- aggregate(data$abiomass ~ Treatment, data, mean)
+shoot.sem <- aggregate(data$abiomass ~ Treatment, data, sem)
+root.sem.LL <- root.mean[2] + root.sem[2]
+root.sem.UL <- root.mean[2] - root.sem[2]
+shoot.sem.LL <- shoot.mean[2] + shoot.sem[2]
+shoot.sem.UL <- shoot.mean[2] - shoot.sem[2]
+root.table <- data.frame(root.mean[1], root.mean[2], root.sem[2],
+          root.sem.LL[1], root.sem.UL[1])
+shoot.table <- data.frame(shoot.mean[1], shoot.mean[2], shoot.sem[2],
+          shoot.sem.LL[1], shoot.sem.UL[1])
+
+#root.95.LL <- aggregate(bbiomass ~ Treatment, data,
+#          FUN = function(x) t.test(x)$conf.int[1])
+#root.95.UL <- aggregate(bbiomass ~ Treatment, data,
+#          FUN = function(x) t.test(x)$conf.int[2])
+#root.table <- data.frame(root.mean[1], root.mean[2], root.sem[2],
+#          root.95.LL[2], root.95.UL[2])
+colnames(root.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+root.table <- root.table[order(root.table$mean),]
+#root.table$plant <- c("root", "root")
+
+# Shoot biomass count table # 
+#shoot.95.LL <- aggregate(abiomass ~ Treatment, data,
+#          FUN = function(x) t.test(x)$conf.int[1])
+#shoot.95.UL <- aggregate(abiomass ~ Treatment, data,
+#          FUN = function(x) t.test(x)$conf.int[2])
+#shoot.table <- data.frame(shoot.mean[1], shoot.mean[2], shoot.sem[2],
+#          shoot.95.LL[2], shoot.95.UL[2])
+colnames(shoot.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+shoot.table <- shoot.table[order(shoot.table$mean),]
+#shoot.table$plant <- c("shoot", "shoot")
+
+# Combine count table # 
+biomass.table <- rbind(root.table, shoot.table)
+
+# Generating figure # 
+png(filename="../figures/Figure1A-Plantbiomass.png",
+    width = 800, height = 800, res = 96*2)
+
+par(mar = c(5, 5, 1, 1))
+
+biomass.fig <- plot(jitter(rep(1, length(root.rpf$value)), amount = 0.1), root.rpf$value, 
+      ylim = c(0, 1.5), xlim = c(0.5, 4.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(root.con$value)), amount = 0.1), root.con$value, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+points(jitter(rep(3, length(shoot.rpf$value)), amount = 0.1), shoot.rpf$value, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+points(jitter(rep(4, length(shoot.con$value)), amount = 0.1),shoot.con$value, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7) 
+
+points(1, mean(root.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(root.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(3, mean(shoot.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(4, mean(shoot.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+mtext(expression('Dry Biomass (g)'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3, adj = 0.5)
+mtext(expression('Root           Shoot'), side = 1, 
+      outer = FALSE, cex = 1.5, line = 2.9, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "0.3", "0.6", "0.9", "1.2", "1.5"), at = c(0, 0.3, 0.6, 0.9, 1.2, 1.5))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 0.3, 0.6, 0.9, 1.2, 1.5), labels = F, tck = -0.02)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf+", "Rpf-", "Rpf+", "Rpf-"), at = c(1, 2, 3, 4))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2, 3, 4), labels = F, tck = -0.02)
+
+arrows(x0 = c(1,2,3,4), y0 = biomass.table$mean, y1 = biomass.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(1,2,3,4), y0 = biomass.table$mean, y1 = biomass.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+text(0.9,1.375 ,labels="A", col="black", cex=2)
+
+abline(v=2.5,col="Black",lty=2, lwd=3)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Figure1A-Plantbiomass.png")
+grid.raster(img)
+```
+
+
+# 9) Brassica rapa root:shoot ratio
+
+## Bargraph: Root : Shoot Ratio
+
+```{r}
+# Root shoot ratio calculations # 
+abio <- data$abiomass
+bbio <- data$bbiomass
+data$root.shoot.ratio <- abio/bbio
+
+# Calculate means and SEM # 
+root.shoot.means.sem <- ddply(data, c("Treatment"), summarise,
+                   mean=mean(root.shoot.ratio), sem=sd(root.shoot.ratio)/sqrt(length(root.shoot.ratio)))
+root.shoot.means.sem <- transform(root.shoot.means.sem, lower=mean-sem, upper=mean+sem)
+
+# Bar plot # 
+root.shoot.bar <- ggplot(root.shoot.means.sem, aes(x = Treatment, y = mean)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), 
+           stat = "identity", size=1, fill = c("White", "Grey30"))
+
+root.shoot.bar  + geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.65), 
+                                data=root.shoot.means.sem, width = 0.2, size=1) +
+  labs(x =  "Treatment" ,y="Root:Shoot Ratio") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(15,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2))# + 
+ # annotate("text", x =0.575, y=2.3, label = c("D"), size=12)
+```
+
+## Statistics: Root : Shoot Ratio
+
+```{r}
+ratiobiomass.aov <- anova(lm(root.shoot.ratio~Treatment ,data=data))
+ratiobiomass.aov
+# Result: Non-significant main effect of Rpf 
+```
+
+
+# 10) Plant specific leaf area 
+
+## Bargraph: SLA
+
+```{r}
+# Calculate means and SEM # 
+SLA.sem <- ddply(data, c("Treatment"), summarise,
+                   mean=mean(SLA), sem=sd(SLA)/sqrt(length(SLA)))
+SLA.sem <- transform(SLA.sem, lower=mean-sem, upper=mean+sem)
+
+# Bar plot # 
+SLA.bar <- ggplot(SLA.sem, aes(x = Treatment, y = mean)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1, fill = c("white", "grey30"))
+
+SLA.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=SLA.sem, width = 0.2, size=1) +
+  labs(x =  "Treatment" ,y="Plant SLA") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(15,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) +
+  annotate("text", x =0.575, y=300, label = c("D"), size=12)
+```
+
+## Statistics: Plant SLA
+
+```{r}
+SLA.aov <- anova(lm(SLA~Treatment, data=data))
+SLA.aov
+# Results: Non-significant effec of Rpf p = 0.4355, f=0.6446
+```
+
+# 11) Plant Height
+
+## Bargraph: SLA
+
+```{r}
+# Calculate means and SEM # 
+Height.sem <- ddply(data, c("Treatment"), summarise,
+                   mean=mean(height), sem=sd(height)/sqrt(length(height)))
+Height.sem <- transform(Height.sem, lower=mean-sem, upper=mean+sem)
+
+# Bar plot # 
+Height.bar <- ggplot(Height.sem, aes(x = Treatment, y = mean)) + 
+  geom_bar(width=0.5, colour="black", position = position_dodge(width = 0.65), stat = "identity", size=1, fill=c("White", "grey30"))
+
+Height.bar  + geom_errorbar(aes(ymax=upper, ymin=lower),
+                              position=position_dodge(0.65), data=Height.sem, width = 0.2, size=1) +
+  labs(x =  "Treatment" ,y="Plant Shoot Height") +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=18),
+        axis.text.x=element_text(colour="black", size =20),
+        axis.title=element_text(size=22),
+        axis.title.y = element_text(colour="black",  margin = margin(0,10,0,10)),
+        axis.title.x = element_text(colour="black",margin=margin(15,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.ticks = element_line(size = 2)) + 
+  annotate("text", x =0.575, y=30, label = c("D"), size=12)
+```
+
+## Statistics: Plant shoot height
+
+```{r}
+height.aov <- anova(lm(height~Treatment ,data=data))
+height.aov
+# Results: Non-significant Rpf effect p=0.2856, F=1.2325
+```
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1179 @@
+---
+title: "Rpf Brassica rapa experiment"
+author: "Venus Kuo"
+date: "May 29, 2018"
+output: html_document
+---
+
+Questions: Does resuscitating the soil microbial seed bank with Rpf alter plant-microbe interaction as measured by plant biomass and reproductive output? What are the Rpf-induced changes in the soil microbial community that can directly affect plant performance?
+
+
+Methods: I conducted a six-week growth chamber experiment using Brassica rapa where I had one treatment of weekly Rpf application and the other with control protein buffer. I quantified plant biomass and reproductive output at the end of the experiment. In addition, I measured weekly soil respiration, soil microbial abundance, and sequenced the soil bacterial community to determine how Rpf treatment altered the soil microbial community. 
+
+
+Set working environment and load packages
+
+```{r setup, message=FALSE, warning=FALSE}
+# Clear and set working directory #
+rm(list = ls())
+getwd()
+knitr::opts_knit$set(root.dir = "~/../Github/BrassicaRpf/data")
+
+# Require or install packages #
+package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'reshape', 'grid', 'png', 'car', 'bbmle', 'reshape2', 'ggplot2') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+# Load small sem calculation function # 
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+```
+
+
+# 1) Rpf effects on Brassica traits 
+
+## Load data
+
+```{r}
+# Load plant trait data # 
+plant.data <- read.delim("plantTrait.txt", sep = ",", header = TRUE)
+
+# Remove soil sterilization treatment from dataset # 
+plant.data <- subset(plant.data, soil == "Live") # This treatment does not add meaningful information to study
+```
+
+## Rpf effects on Brassica biomass
+
+```{r}
+# Subsetting data set # 
+data.sub <- subset(plant.data, select=(c(Treatment, abiomass, bbiomass)))
+
+# Combining the above and belowground biomass # 
+data.m <- melt(data.sub) 
+
+
+# Selecting shoot biomass data for plotting # 
+shoot.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$variable == "abiomass"),]
+shoot.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$variable == "abiomass"),]
+
+# Shoot Biomass mean and sem table # 
+shoot.mean <- aggregate(plant.data$abiomass ~ Treatment, plant.data, mean)
+shoot.sem <- aggregate(plant.data$abiomass ~ Treatment, plant.data, sem)
+shoot.sem.LL <- shoot.mean[2] + shoot.sem[2]
+shoot.sem.UL <- shoot.mean[2] - shoot.sem[2]
+shoot.table <- data.frame(shoot.mean[1], shoot.mean[2], shoot.sem[2],
+          shoot.sem.LL[1], shoot.sem.UL[1])
+colnames(shoot.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+shoot.table <- shoot.table[order(shoot.table$mean),]
+
+
+# Selecting root biomass data for plotting # 
+root.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$variable == "bbiomass"),]
+root.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$variable == "bbiomass"),]
+
+# Root Biomass  mean and sem table # 
+root.mean <- aggregate(plant.data$bbiomass ~ Treatment, plant.data, mean)
+root.sem <- aggregate(plant.data$bbiomass ~ Treatment, plant.data, sem)
+root.sem.LL <- root.mean[2] + root.sem[2]
+root.sem.UL <- root.mean[2] - root.sem[2]
+root.table <- data.frame(root.mean[1], root.mean[2], root.sem[2],
+          root.sem.LL[1], root.sem.UL[1])
+colnames(root.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+root.table <- root.table[order(root.table$mean),]
+
+
+# Flower count data for plotting # 
+flower.rpf <- plant.data[ which(plant.data$Treatment == "Rpf+"),]
+flower.con <- plant.data[ which(plant.data$Treatment == "Rpf-"),]
+
+# Flower count data table # 
+flower.mean <- aggregate(plant.data$flower.count ~ Treatment, plant.data, mean)
+flower.sem <- aggregate(plant.data$flower.count ~ Treatment, plant.data, sem)
+flower.sem.LL <- flower.mean[2] + flower.sem[2]
+flower.sem.UL <- flower.mean[2] - flower.sem[2]
+flower.table <- data.frame(flower.mean[1], flower.mean[2], flower.sem[2],
+          flower.sem.LL[1], flower.sem.UL[1])
+colnames(flower.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+flower.table <- flower.table[order(flower.table$mean),]
+
+
+# Generating figure showing Rpf effects on plant traits # 
+png(filename="../figures/Figure1-PlantTraits.png",
+    width = 1200, height = 800, res = 96*2)
+
+par(oma=c(7,3,7,1), mar=c(2,3,3,3), mfrow=c(1,3))
+
+# Plotting first panel for shoot biomass # 
+shoot.fig <- plot(jitter(rep(1, length(shoot.con$value)), amount = 0.1), shoot.con$value, 
+      ylim = c(0, 1.5), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(shoot.rpf$value)), amount = 0.1), shoot.rpf$value, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+
+# Adding mean value point # 
+points(1, mean(shoot.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(shoot.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+
+box(lwd = 2)
+
+# Y-axis label # 
+mtext(expression('Shoot biomass (g)'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "0.5", "1.0", "1.5"), at = c(0, 0.5, 1.0, 1.5))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Adding SEM bars # 
+arrows(x0 = c(2,1), y0 = shoot.table$mean, y1 = shoot.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = shoot.table$mean, y1 = shoot.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Panel label # 
+text(0.75,1.4 ,labels="A", col="black", cex=2)
+
+
+# Plotting second panel for root biomass # 
+root.fig <- plot(jitter(rep(1, length(root.con$value)), amount = 0.1), root.con$value, 
+      ylim = c(0, 1.5), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(root.rpf$value)), amount = 0.1), root.rpf$value, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+
+# Adding mean circle # 
+points(1, mean(root.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(root.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+
+box(lwd = 2)
+
+# Y-axis label # 
+mtext(expression('Root biomass (g)'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "0.5", "1.0", "1.5"), at = c(0, 0.5, 1.0, 1.5))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Adding SEM bars # 
+arrows(x0 = c(2,1), y0 = root.table$mean, y1 = root.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = root.table$mean, y1 = root.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Panel label @
+text(0.75,1.4 ,labels="B", col="black", cex=2)
+
+
+# Plotting third panel for flower count # 
+flowercount.fig <- plot(jitter(rep(1, length(flower.con$flower.count)), amount = 0.1), flower.con$flower.count, 
+      ylim = c(0, 15), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(flower.rpf$flower.count)), amount = 0.1), flower.rpf$flower.count, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+
+points(1, mean(flower.con$flower.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(flower.rpf$flower.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis label # 
+mtext(expression('Flower number'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "5", "10", "15"), at = c(0, 5, 10, 15))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 5, 10, 15), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add SEM bars
+arrows(x0 = c(2,1), y0 = flower.table$mean, y1 = flower.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = flower.table$mean, y1 = flower.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Panel label # 
+text(0.75,14 ,labels="C", col="black", cex=2)
+
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Figure1-PlantTraits.png")
+grid.raster(img)
+
+
+# Statistical tests of Rpf treatment effects on biomass # 
+# 2 sample t-test of Rpf effect on total plant biomass 
+plant.t.aov <- anova(lm(total.biomass ~ Treatment, data=plant.data))
+plant.t.aov
+    # Results: Significant effect of Rpf, p = 0.0132, F(1,14)=8.0455
+
+# 2 sample t-test of Rpf effect on root biomass 
+plant.b.aov <- anova(lm(bbiomass ~ Treatment, data=plant.data))
+plant.b.aov
+    # Results: Signficant effect of Rpf, p=0.037, F(1,14)=5.298)
+
+# 2 sample t-test of Rpf effect on above-ground biomass 
+plant.a.aov <- anova(lm(abiomass ~ Treatment, data=plant.data))
+plant.a.aov
+    # Results: Significant effect of Rpf, p = 0.017, F(1,14)= 7.3118
+
+# 2 sample t-test of the effect of Rpf on flower production 
+flower.aov <- anova(lm(flower.count ~ Treatment, data=plant.data))
+flower.aov
+    # Results: Marginally nonsignificant effect of Rpf treatment F(1,14) = 3.22 and p = 0.09
+```
+
+
+# Rpf effects on other plant traits: seed count, root:shoot, SLA, shoot height 
+
+```{r}
+# 2 sample t-test of the effect of Rpf on seed count # 
+seed.aov <- anova(lm(seed.count ~ Treatment, data=plant.data))
+seed.aov
+    # Results: No significant effect of Rpf on seed production F(1,14)= 0.69 and p = 0.42 
+
+ratiobiomass.aov <- anova(lm(shoot.root~Treatment, data=plant.data))
+ratiobiomass.aov
+    # Result: Non-significant main effect of Rpf 
+
+SLA.aov <- anova(lm(SLA~Treatment, data=plant.data))
+SLA.aov
+# Results: Non-significant effec of Rpf p = 0.4355, f=0.6446
+
+height.aov <- anova(lm(height~Treatment, data=plant.data))
+height.aov
+# Results: Non-significant Rpf effect p=0.2856, F=1.2325
+```
+
+
+# 2) Rpf effects on the activity of soil microbial community
+
+## Load soil respiration data
+
+```{r}
+# Load soil respirtation data #
+CO2 <- read.csv("GCH_CO2.txt", sep = ",", header = TRUE)
+
+# Subsetting data from CO2 dataset # 
+CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6)) # We are only interested in samples with plants and live soil. 
+
+# Change column names # 
+colnames(CO2.sub) <- c("Treatment", "soil", "1","2","3","4","5","6")
+
+# Melt data into three columns of treatment, soil and weeks # 
+CO2.m <- melt(CO2.sub)
+CO2.m$variable <- as.factor(CO2.m$variable)
+
+# Standardizing the respiration values by 24 hours # 
+CO2.values <- CO2.m$value
+CO2.m$StdCO2 <- CO2.values/24
+
+# Set week variable as factor # 
+CO2.m$variable <- as.factor(CO2.m$variable)
+```
+
+## Plotting soil respiration figure
+
+```{r}
+# Calculating CO2 respiration mean and sem # 
+CO2.means.sem <- ddply(CO2.m, c("Treatment", "variable"), summarise,
+                   mean=mean(StdCO2), sem=sd(StdCO2)/sqrt(length(StdCO2)))
+CO2.means.sem <- transform(CO2.means.sem, lower=mean-sem, upper=mean+sem)
+
+# The errorbars overlapped, so use position_dodge to move them horizontally
+pd <- position_dodge(0)
+
+# Plot line graph # 
+co <- ggplot(CO2.means.sem, aes(x=variable, y=mean, colour=Treatment, group=Treatment)) +
+      geom_errorbar(aes(ymax=upper, ymin=lower), position=position_dodge(0.1), 
+                data=CO2.means.sem, width = 0.2, size=1) +
+      geom_line(position=pd, size=1.25) +
+      geom_point(aes(shape=Treatment), position=pd, size=4) +
+      scale_shape_manual(values=c(16, 16)) +
+      xlab("Time (weeks)") +
+      ylab(expression(Soil~respiration~(ppm~CO[2]~d^-1)/soil~(g))) 
+
+co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250), 
+                     sec.axis = sec_axis(~ . * 1, labels = c(" "," "," ", " ", " "))) +
+     theme_classic() +
+     theme(axis.text.y=element_text(colour = "black", size = 18),
+          axis.text.x=element_text(colour = "black", size = 20),
+          axis.ticks = element_line(size = 1.25),
+          axis.ticks.length = unit(.25, "cm"),
+          axis.title.y = element_text(size = 15, colour = "black", margin = margin(0,10,0,0)),
+          axis.title.x = element_text(size = 18, colour = "black", margin = margin(15,10,0,10)),
+          panel.border = element_rect(linetype = "solid", colour = "black", size = 2, fill = NA),
+          legend.position = c(0.9, 0.2), legend.text = element_text(size = 15),
+          legend.title = element_blank()) +
+    scale_color_manual(values=c('lightgrey','gray15')) 
+
+ggsave("../figures/Figure2-Soilrespiration.png", width = 20, height = 15, units = "cm")
+
+## Statistics: Soil microbial respiration 
+# Perform RM-ANOVA #   
+CO2.rm <- lme(StdCO2 ~ variable*Treatment, random = ~ 1 | soil,
+              correlation = corAR1(form = ~1 | soil), 
+              data = CO2.m)
+
+rich.cmp <- lme(StdCO2 ~ variable*Treatment, random = ~ 1 | soil,
+                correlation = corCompSymm(form = ~1 | soil),
+                data = CO2.m)
+
+# Make cleaner ANOVA table #
+#set.caption("RMANOVA for soil CO2 respiration")
+#pander(anova(rich.cmp))
+
+# Make cleaner ANOVA table #
+#set.caption("RMANOVA for soil CO2 respiration")
+#pander(anova(CO2.rm))
+```
+
+# Same data as above but with explicit data points
+
+```{r}
+# subset CO2 data by treatment # 
+CO2.rpf <- CO2.m[ which(CO2.m$Treatment == "Rpf+"), ]
+CO2.con <- CO2.m[ which(CO2.m$Treatment == "Rpf-"), ]
+
+# CO2 data points for figure # 
+CO2.rpf.1 <- CO2.m[ which(CO2.m$Treatment == "Rpf+" & CO2.m$variable == "1"), ]
+CO2.rpf.2 <- CO2.m[ which(CO2.m$Treatment == "Rpf+" & CO2.m$variable == "2"), ]
+CO2.rpf.3 <- CO2.m[ which(CO2.m$Treatment == "Rpf+" & CO2.m$variable == "3"), ]
+CO2.rpf.4 <- CO2.m[ which(CO2.m$Treatment == "Rpf+" & CO2.m$variable == "4"), ]
+CO2.rpf.5 <- CO2.m[ which(CO2.m$Treatment == "Rpf+" & CO2.m$variable == "5"), ]
+CO2.rpf.6 <- CO2.m[ which(CO2.m$Treatment == "Rpf+" & CO2.m$variable == "6"), ]
+
+CO2.con.1 <- CO2.m[ which(CO2.m$Treatment == "Rpf-" & CO2.m$variable == "1"), ]
+CO2.con.2 <- CO2.m[ which(CO2.m$Treatment == "Rpf-" & CO2.m$variable == "2"), ]
+CO2.con.3 <- CO2.m[ which(CO2.m$Treatment == "Rpf-" & CO2.m$variable == "3"), ]
+CO2.con.4 <- CO2.m[ which(CO2.m$Treatment == "Rpf-" & CO2.m$variable == "4"), ]
+CO2.con.5 <- CO2.m[ which(CO2.m$Treatment == "Rpf-" & CO2.m$variable == "5"), ]
+CO2.con.6 <- CO2.m[ which(CO2.m$Treatment == "Rpf-" & CO2.m$variable == "6"), ]
+
+# CO2 Rpf+ data table
+CO2.rpf.mean <- aggregate(CO2.rpf$StdCO2 ~ variable, CO2.rpf, mean)
+CO2.rpf.sem <- aggregate(CO2.rpf$StdCO2 ~ variable, CO2.rpf, sem)
+CO2.rpf.sem.LL <- CO2.rpf.mean[2] - CO2.rpf.sem[2]
+CO2.rpf.sem.UL <- CO2.rpf.mean[2] + CO2.rpf.sem[2]
+CO2.rpf.table <- data.frame(CO2.rpf.mean[1], CO2.rpf.mean[2], CO2.rpf.sem[2],
+          CO2.rpf.sem.LL[1], CO2.rpf.sem.UL[1])
+colnames(CO2.rpf.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+CO2.rpf.table <- CO2.rpf.table[order(CO2.rpf.table$mean),]
+
+# CO2 Rpf- data table # 
+CO2.con.mean <- aggregate(CO2.con$StdCO2 ~ variable, CO2.con, mean)
+CO2.con.sem <- aggregate(CO2.con$StdCO2 ~ variable, CO2.con, sem)
+CO2.con.sem.LL <- CO2.con.mean[2] - CO2.con.sem[2]
+CO2.con.sem.UL <- CO2.con.mean[2] + CO2.con.sem[2]
+CO2.con.table <- data.frame(CO2.con.mean[1], CO2.con.mean[2], CO2.con.sem[2],
+          CO2.con.sem.LL[1], CO2.con.sem.UL[1])
+colnames(CO2.con.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+CO2.con.table <- CO2.con.table[order(CO2.con.table$mean),]
+
+# Making line graph of soil respiration over course of growth chamber experiment # 
+png(filename="../figures/Figure2-soilRespiration-WithDataPoints.png",
+    width = 1200, height = 800, res = 96*2)
+
+par(mar = c(5, 5, 1, 1))
+
+# Control treatment 
+resp.fig <- plot(jitter(rep(0.9, length(CO2.con.1$StdCO2)), amount = 0.1), CO2.con.1$value, 
+      ylim = c(0, 1000), xlim = c(0.5, 6.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(1.9, length(CO2.con.2$StdCO2)), amount = 0.1), CO2.con.2$StdCO2, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+points(jitter(rep(2.9, length(CO2.con.3$StdCO2)), amount = 0.1), CO2.con.3$StdCO2, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+points(jitter(rep(3.9, length(CO2.con.4$StdCO2)), amount = 0.1), CO2.con.4$StdCO2, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7) 
+points(jitter(rep(4.9, length(CO2.con.5$StdCO2)), amount = 0.1), CO2.con.5$StdCO2, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7) 
+points(jitter(rep(5.9, length(CO2.con.6$StdCO2)), amount = 0.1), CO2.con.6$StdCO2, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7) 
+
+# Rpf treatment
+points(jitter(rep(1.1, length(CO2.rpf.2$StdCO2)), amount = 0.1), CO2.rpf.2$StdCO2, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+points(jitter(rep(2.1, length(CO2.rpf.2$StdCO2)), amount = 0.1), CO2.rpf.2$StdCO2, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+points(jitter(rep(3.1, length(CO2.rpf.3$StdCO2)), amount = 0.1), CO2.rpf.3$StdCO2, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+points(jitter(rep(4.1, length(CO2.rpf.4$StdCO2)), amount = 0.1),CO2.rpf.4$StdCO2, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7) 
+points(jitter(rep(5.1, length(CO2.rpf.5$StdCO2)), amount = 0.1),CO2.rpf.5$StdCO2, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7) 
+points(jitter(rep(6.1, length(CO2.rpf.6$StdCO2)), amount = 0.1),CO2.rpf.6$StdCO2, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7) 
+
+# Adding mean data point for control treatment # 
+points(0.9, mean(CO2.con.1$StdCO2), pch = 21, col = "grey", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(1.9, mean(CO2.con.2$StdCO2), pch = 21, col = "grey", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2.9, mean(CO2.con.3$StdCO2), pch = 21, col = "grey", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(3.9, mean(CO2.con.4$StdCO2), pch = 21, col = "grey", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(4.9, mean(CO2.con.5$StdCO2), pch = 21, col = "grey", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(5.9, mean(CO2.con.6$StdCO2), pch = 21, col = "grey", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+# Adding mean data point for Rpf treatment # 
+points(1.1, mean(CO2.rpf.1$StdCO2), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2.1, mean(CO2.rpf.2$StdCO2), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(3.1, mean(CO2.rpf.3$StdCO2), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(4.1, mean(CO2.rpf.4$StdCO2), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(5.1, mean(CO2.rpf.5$StdCO2), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(6.1, mean(CO2.rpf.6$StdCO2), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Axis labels
+mtext(expression(Soil~respiration~(ppm~CO[2]~d^-1)/soil~(g)), side = 2,
+      outer = FALSE, cex = 1.5, line = 3.5, adj = 0.5)
+mtext("Time (weeks)", side = 1,
+      outer = FALSE, cex = 1.5, line = 3, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.5, las = 1, 
+     labels = c("0", "250", "500", "750", "1000"), 
+     at = c(0, 250, 500, 750, 1000))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0, 250, 500, 750, 1000), labels = F, tck = -0.02)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     labels = c("1", "2", "3", "4", "5", "6"), at = c(1, 2, 3, 4, 5, 6))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2, 3, 4, 5, 6), labels = F, tck = -0.02)
+
+# Adding SEM for Rpf- CO2 # 
+arrows(x0 = c(0.9, 1.9, 2.9, 3.9, 4.9, 5.9), y0 = CO2.con.table$mean, y1 = CO2.con.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(0.9, 1.9, 2.9, 3.9, 4.9, 5.9), y0 = CO2.con.table$mean, y1 = CO2.con.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Adding SEM for Rpf+ CO2 # 
+arrows(x0 = c(1.1, 2.1, 3.1, 4.1, 5.1, 6.1), y0 = CO2.rpf.table$mean, y1 = CO2.rpf.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(1.1, 2.1, 3.1, 4.1, 5.1, 6.1), y0 = CO2.rpf.table$mean, y1 = CO2.rpf.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# add a legend 
+legend("topleft", c("Rpf-", "Rpf+"),
+       pch = c(21, 21), pt.bg = c("lightgrey", "gray15"), col = c("lightgrey", "gray15"),
+       bty = "n", y.intersp = 1, pt.cex = 2, cex = 1.5, lwd= 0, lty =  NA)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Figure2-soilRespiration-WithDataPoints.png")
+grid.raster(img)
+```
+
+
+
+# 3) Effect of Rpf on soil bacterial and fungal abundance and F:B ratios
+
+## Loading data 
+
+```{r}
+# Load microbial qPCR abundance data # 
+abundance <- read.csv("qPCR.txt", sep = ",", header = TRUE) 
+
+# Define week as factor for qPCR data # 
+abundance$Week <- factor(abundance$Week)
+
+# Remove missing samples info # 
+abundance <- na.omit(abundance)
+
+# remove week 1 data # 
+abundance <- subset(abundance, Week == "6")
+
+# Reset data frame index # 
+rownames(abundance) <- NULL
+
+# Standardizing gene copy abundances by soil amount # 
+soil <- abundance$Soil
+abundance$stdGeneCopy <- (abundance$GeneCopy)/soil
+
+# Log10 transforming standardized gene copy number # 
+abundance$log10stdGeneCopy <- log10(abundance$stdGeneCopy)
+
+# Subsetting by fungi or bacteria # 
+data.sub.bac <- subset(abundance, Gene == "rRNA")
+data.sub.fun <- subset(abundance, Gene == "ITS")
+
+# Calculating fungi to bacteria ratios # 
+gca.B <- data.sub.bac$stdGeneCopy
+gca.F <- data.sub.fun$stdGeneCopy
+abundance$FB <- (gca.F/gca.B)
+
+ratioFB <- abundance[1:18, ]
+ratioFB <- subset(ratioFB, select=(c(Treatment, Week, FB)))
+```
+
+## Making figure 3 
+
+```{r}
+# Simplifying data set # 
+data.sub <- subset(abundance, select=(c(Treatment, Gene, stdGeneCopy)))
+
+# Melting the dataset # 
+data.m <- melt(data.sub)
+
+# Bacterial abundance data for plotting # 
+bac.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$Gene == "rRNA"),]
+bac.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$Gene == "rRNA"),]
+
+# Bacterial abundance mean and sem table # 
+bac.mean <- aggregate(data.sub.bac$stdGeneCopy ~ Treatment, data.sub.bac, mean)
+bac.sem <- aggregate(data.sub.bac$stdGeneCopy ~ Treatment, data.sub.bac, sem)
+bac.sem.LL <- bac.mean[2] - bac.sem[2]
+bac.sem.UL <- bac.mean[2] + bac.sem[2]
+bac.table <- data.frame(bac.mean[1], bac.mean[2], bac.sem[2],
+          bac.sem.LL[1], bac.sem.UL[1])
+colnames(bac.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+bac.table <- bac.table[order(bac.table$mean),]
+
+# Fungal abundance data for plotting # 
+fun.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$Gene == "ITS"),]
+fun.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$Gene == "ITS"),]
+
+# Fungal abundance mean and sem table # 
+fun.mean <- aggregate(data.sub.fun$stdGeneCopy ~ Treatment, data.sub.fun, mean)
+fun.sem <- aggregate(data.sub.fun$stdGeneCopy ~ Treatment, data.sub.fun, sem)
+fun.sem.LL <- fun.mean[2] - fun.sem[2]
+fun.sem.UL <- fun.mean[2] + fun.sem[2]
+fun.table <- data.frame(fun.mean[1], fun.mean[2], fun.sem[2],
+          fun.sem.LL[1], fun.sem.UL[1])
+colnames(fun.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+fun.table <- fun.table[order(fun.table$mean),]
+
+# Fungi: Bacteria ratio data for plotting #
+FB.rpf <- ratioFB[ which(ratioFB$Treatment == "Rpf+"),]
+FB.con <- ratioFB[ which(ratioFB$Treatment == "Rpf-"),]
+
+# FB: Bacteria ratio mean and sem # 
+FB.mean <- aggregate(ratioFB$FB ~ Treatment, ratioFB, mean)
+FB.sem <- aggregate(ratioFB$FB ~ Treatment, ratioFB, sem)
+FB.sem.LL <- FB.mean[2] + FB.sem[2]
+FB.sem.UL <- FB.mean[2] - FB.sem[2]
+FB.table <- data.frame(FB.mean[1], FB.mean[2], FB.sem[2],
+          FB.sem.LL[1], FB.sem.UL[1])
+colnames(FB.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+FB.table <- FB.table[order(FB.table$mean),]
+
+
+# Plotting microbial abundance and ratio figure # 
+png(filename="../figures/Figure3-MicrobialAbundanceRatio.png",
+    width = 1200, height = 800, res = 96*2)
+par(oma=c(7,3,7,1), mar=c(2,3,3,4), mfrow=c(1,3))
+
+# Panel 1: Rpf effects on bacterial abundance # 
+abun.bac.fig <- plot(jitter(rep(1, length(bac.con$value)), amount = 0.1), bac.con$value, 
+      ylim = c(0, 2.4E6), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(bac.rpf$value)), amount = 0.1), bac.rpf$value, pch = 21, 
+       bg = "gray10", col = "gray10", lwd = 2, cex = 1.7)
+
+# Adding mean data pointfor each treatment # 
+points(1, mean(bac.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(bac.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('rRNA gene copy/ soil (g)'), side = 2,
+      outer = FALSE, cex = 1.25, line = 3.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0E0", "8.0E5", "1.6E6", "2.4E6"), 
+     at = c(0.0E0, 8.0E5, 1.6E6, 2.4E6))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0E0, 8.0E5, 1.6E6, 2.4E6), labels = F, tck = -0.05)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Adding SEM # 
+arrows(x0 = c(2,1), y0 = bac.table$mean, y1 = bac.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = bac.table$mean, y1 = bac.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Panel label # 
+text(0.7,2.2E6 ,labels="A", col="black", cex=2)
+
+# Panel 2: Rpf effects on fungal abundance # 
+abun.fun.fig <- plot(jitter(rep(1, length(fun.con$value)), amount = 0.1), fun.con$value, 
+      ylim = c(0, 1.5E6), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(fun.rpf$value)), amount = 0.1), fun.rpf$value, pch = 21, 
+       bg = "gray10", col = "gray10", lwd = 2, cex = 1.7)
+
+# Adding mean data pointfor each treatment # 
+points(1, mean(fun.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(fun.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('ITS gene copy / soil (g)'), side = 2,
+      outer = FALSE, cex = 1.25, line = 3.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0E0", "5.0E5", "1.0E6", "1.5E6"), 
+     at = c(0.0E0, 5.0E5, 1.0E6, 1.5E6))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0E0, 5.0E5, 1.0E6, 1.5E6), labels = F, tck = -0.05)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Adding SEM # 
+arrows(x0 = c(1,2), y0 = fun.table$mean, y1 = fun.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(1,2), y0 = fun.table$mean, y1 = fun.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Panel label # 
+text(0.7,1.4E6 ,labels="B", col="black", cex=2)
+
+# Panel 3: Rpf effects on fungal abundance # 
+FB.fig <- plot(jitter(rep(1, length(FB.con$FB)), amount = 0.1), FB.con$FB, 
+      ylim = c(0, 1.5), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(FB.rpf$FB)), amount = 0.1), FB.rpf$FB, pch = 21, 
+       bg = "gray10", col = "gray10", lwd = 2, cex = 1.7)
+
+# Adding mean data pointfor each treatment # 
+points(1, mean(FB.con$FB), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(FB.rpf$FB), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('Fungi:bacteria ratio'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.75, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0", "0.5", "1.0", "1.5"), 
+     at = c(0.0, 0.5, 1.0, 1.5))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Adding SEM # 
+arrows(x0 = c(1,2), y0 = FB.table$mean, y1 = FB.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(1,2), y0 = FB.table$mean, y1 = FB.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Panel label # 
+text(0.7,1.4,labels="C", col="black", cex=2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Figure3-MicrobialAbundanceRatio.png")
+grid.raster(img)
+
+
+# Statistics: Rpf treatment effect on bacterial abundance 
+bac.aov <- aov(stdGeneCopy ~ Treatment, data=data.sub.bac)
+summary(bac.aov)
+TukeyHSD(bac.aov)
+     # Results: Significant effect of Rpf p=0.0156 and F(1,16)= 7.327
+
+# Statistics: Rpf treatment effect on fungal abundance 
+fun.aov <- aov(stdGeneCopy ~ Treatment, data=data.sub.fun)
+summary(fun.aov)
+TukeyHSD(fun.aov)
+    # Results: Significant effect of Rpf p=0.0048 and F(1,16)= 10.71
+
+FB.aov <- aov(ratioFB$FB ~ Treatment, data = ratioFB)
+summary(FB.aov)
+TukeyHSD(FB.aov)
+```
+
+
+# 4) Effects of Rpf treatment on soil bacterial community structure
+
+## Set up work environment and load dependencies 
+
+```{r, message=FALSE, warning=FALSE}
+# Setup work enviroment 
+rm(list = ls())
+knitr::opts_knit$set(root.dir = "~/../Github/BrassicaRpf/analysis")
+
+# Source diversity code functions from bin folder # 
+source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/DiversityFunctions.R")
+source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/MothurTools.R")
+source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/phylodiversity2.R")
+
+# Load dependencies # 
+package.list <- c('vegan', 'plyr' , 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn', 'indicspecies', 'viridis' ,  'BiodiversityR') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+# Load sem custom functions # 
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+
+# Load t-test custom functions # 
+ttest <- function(reg, coefnum, val){
+  co <- coef(summary(reg))
+  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
+  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
+  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
+}
+
+run.all <- TRUE
+```
+
+## Loading data sets
+
+```{r}
+  # Design       = general design file for experiment
+  # shared       = OTU table from mothur with sequence similarity clustering
+  # tax          = Taxonomy for 97% similarity OTUs
+design <- "C:/Users/vkuo/GitHub/BrassicaRpf/data/Brassica.design.txt"
+shared <- "C:/Users/vkuo/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.shared"
+taxon <- "C:/Users/vkuo/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.0.03.taxonomy"
+
+# Import Design 
+design <- read.delim(design, header=T, row.names=1)
+
+# Import Shared Files
+OTU <- read.otu(shared = shared, cutoff = "0.03") # Using 97% similarity cut-off
+
+# Import Taxonomy
+OTU.tax <- read.tax(taxonomy = taxon, format = "rdp") # This function is not working, must fix 
+
+# Import Phylogenetic tree 
+OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.2") # Revised with updated KBS 16S gene sequences
+```
+
+## Calculate Coverage Stats
+
+```{r}
+# Remove OTUs with less than two occurences across all sites # 
+OTU <- OTU[, which(colSums(OTU) >= 2)]
+
+# Remove mock community # 
+OTU <- OTU[1:20, ]  
+
+# Determine coverage of sequences # 
+cov.seqs <- count.groups(OTU)
+cov.mean <- mean(cov.seqs) # 160,871
+cov.sem <- sem(cov.seqs) # 16,095.38
+cov.min <- min(cov.seqs) # 79,797
+total.seqs <- sum(cov.seqs) # 3,217,419 
+
+# Good's coverage
+goods.c <- function(x = ""){
+              1 - (apply(OTU, 1, function(x){sum(x == 1)}) / rowSums(x))
+}
+
+goods.c.Brassica <- goods.c(OTU)
+mean.good.c <- mean(goods.c.Brassica) # 0.984  Good mean coverage
+min.good.c <- min(goods.c.Brassica) # 0.967  Good lowest coverage
+```
+
+## Alpha diversity
+
+```{r}
+# Resampling code to estimate alpha diversity (used if run.all = T)
+if (run.all == TRUE){
+  rich <- round(richness.iter(input = OTU, size = 10000,
+                              iters = 100, shared = "FALSE"), 3)
+  even <- round(evenness.iter(input = OTU, size = 10000,
+                              iters = 100, shared = "FALSE",
+                              method = "simp_even"), 3)
+  rare <- rarefy(OTU, 10000, se = FALSE, MARGIN = 1)
+  # Write output to files
+  write.table(rich, "../data/rich.txt", sep = "\t",
+              col.names = T, row.names = T)
+  write.table(even, "../data/even.txt", sep = "\t",
+              col.names = T, row.names = T)
+}
+
+# Read in alpha diversity files from above
+rich2 <- read.table("../data/rich.txt", sep = "\t")
+even2 <- read.table("../data/even.txt", sep = "\t")
+
+# Merge data to design and calculate mean and sem per sample
+rich.data <- merge(design, rich2, by = "row.names")
+row.names(rich.data) <- rich.data$Row.names
+rich.data <- rich.data[sort(row.names(rich.data)), ]
+rich.mean <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, mean, na.rm = TRUE),3)
+rich.sem <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, sem, na.rm = TRUE), 3)
+
+even.data <- merge(design, even2, by = "row.names")
+row.names(even.data) <- even.data$Row.names
+even.data <- even.data[sort(row.names(even.data)), ]
+even.mean <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, mean, na.rm = TRUE),3)
+even.sem <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, sem, na.rm = TRUE),4)
+
+# Make new dataframe merging design file and mean diversity
+Brassica.div <- data.frame(design[sort(row.names(design)), ], rich.mean, even.mean)
+
+# Take averages of technial reps
+rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, rich = mean(rich.mean))
+even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, even = mean(even.mean))
+
+# Reshape data 
+rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep.num"), direction = "wide")
+
+even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep.num"), direction = "wide")
+
+# Statistics test: t-test of Rpf effect on soil bacterial richness # 
+rich.anova.c <- aov(rich.mean ~ treatment*type, Brassica.div)
+summary(rich.anova.c)   
+# Results: No significant effect of metabolic status (p=0.382) or Rpf (p=0.927) or the interaction (p=0.337)
+
+# Statistical test: t-test of Rpf effect on soil bacterial evenness # 
+even.anova.c <- aov(even.mean ~ treatment*type, Brassica.div)
+summary(even.anova.c)
+#TukeyHSD(even.anova.c)
+# Results: No significant effect of metabolic status (p=0.753), Rpf (p=0.73), or interaction (p=0.653)
+```
+
+## Beta-diversity 
+
+```{r}
+# Make presence-absence matrix
+OTU.PA <- (OTU > 0) * 1
+
+# Make relative abundence matrix
+OTU.REL <- OTU
+for (i in 1:dim(OTU)[1]){
+  OTU.REL[i,] <- OTU[i,]/sum(OTU[i,])
+  }
+
+# Log-transform relative abundances
+OTU.REL.log <- decostand(OTU, method="log")
+
+Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
+Brassica.dis.mean <- mean(Brassica.bc.dis)
+
+# Principal Coordinates Analysis (PCoA)
+Brassica.PCoA <- cmdscale(Brassica.bc.dis, eig = TRUE, k = 3)
+explainvar1 <- round(Brassica.PCoA$eig[1] / sum(Brassica.PCoA$eig), 3) * 100
+explainvar2 <- round(Brassica.PCoA$eig[2] / sum(Brassica.PCoA$eig), 3) * 100
+explainvar3 <- round(Brassica.PCoA$eig[3] / sum(Brassica.PCoA$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+# OTU Scores
+otu.scores <- t(cor(Brassica.PCoA$points, OTU.REL))
+otu.scores <- as.matrix(otu.scores)[,1:2]
+otu.scores <- otu.scores[abs(otu.scores[,1]) > 0.7|abs(otu.scores[,2]) > 0.7,]
+
+# Average BC Distance Between Treatments
+Brassica.bc.dis.m <- as.matrix(Brassica.bc.dis)
+all.equal(row.names(Brassica.div), rownames(Brassica.bc.dis.m))
+
+treatment.div <- unique(Brassica.div$treatment)
+treatment.dis <- rep(NA, length(treatment.div))
+for(i in 1:length(treatment.div)){
+  temp <- row.names(Brassica.div[Brassica.div$treatment == treatment.div[i], ])
+  treatment.dis[i] <- Brassica.bc.dis.m[temp[1], temp[2]]
+}
+
+mean(treatment.dis)
+
+# Plot figure # 
+png(filename="../figures/FigureS4-Ordination.png",
+    width = 1800, height = 800, res = 96*2)
+
+layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
+
+par(mar = c(7, 10, 1, 0) + 0.5)
+
+plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
+     ylim = c(-0.4, 0.4), xlim = c(-0.5, 0.4),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""), line= 5,
+     #xlab = "", ylab = "", xaxt = "n", yaxt = "n",
+     pch = 22, cex = 2.0, type = "n", cex.lab = 2.5, cex.axis = 3,
+     axes = FALSE)
+
+# Add Axes
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1)
+axis(side = 3, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
+axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=-0.02)
+axis(side = 1, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+axis(side = 2, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+axis(side = 3, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 1, las = 1, tck=0.01)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+# Subset data
+Brassica.div.sort <- Brassica.div[order(Brassica.div[,1]) ,]
+all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div.sort))
+Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div.sort)
+
+# Active community
+Brassica.active.rpf <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.active.no <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+# Total community
+Brassica.total.rpf <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+
+# Add points
+# Active community Rpf+
+points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
+       cex = 3.5, col = "black", bg = "Black", lwd= 2.5)
+# Active community Rpf-
+points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
+       cex = 3.5, col = "black", bg = "White", lwd= 2.5)   
+# Total community Rpf+ 
+points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 22,
+       cex = 3.5, col = "black", bg = "Black", lwd= 2.5)
+# Total community Rpf-
+points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 22,
+       cex = 3.5, col = "black", bg = "White", lwd= 2.5)
+
+# Add Legend Outside
+par(mar = c(4, 0, 5, 1) + 0.5)
+plot.new()
+legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
+       pch = c(21, 21, 22, 22),
+       pt.bg = c("White", "Black", "White", "Black"),
+       bty = "n", y.intersp = 1, pt.cex = 3.5, cex = 2, lwd= 2.5, lty =  NA)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Figure5-Ordination.png")
+grid.raster(img)
+
+# Beta diversity hypothesis testing 
+# PERMANOVA 
+# Check Order of Dataframes
+all.equal(row.names(Brassica.div), row.names(OTU.REL.log))
+```
+
+PERMANOVA tests
+
+```{r}
+# Run PERMANOVA with adonis function # 
+canb.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
+                         method = "canberra", binary = FALSE, permutations = 999)
+canb.permanova
+# Significant main effect of metabolic status p = 0.001, r2 = 0.138
+# Non-significant effect of Rpf treatment (p=0.117) or interaction of Rpf and metabolic status (p=0.278)
+
+sorr.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
+                         method = "bray", binary = TRUE, permutations = 999)
+sorr.permanova
+# Significant main effect of metabolic status p = 0.001, r2 = 0.212
+# Non-significant effect of Rpf treatment (p = 0.150) or interaction and metabolic status (p = 0.299)
+
+bray.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
+                         method = "bray", binary = FALSE, permutations = 999)
+bray.permanova
+# Significant main effect of metabolic status p = 0.001, r2 = 0.225
+# Marginally non-significant main effect of Rpf (p= 0.086)
+# Non-significant Rpf and metabolic status interaction effect (p = 0.456)
+
+```
+
+
+
+
+# Supplementary Material: Control Arabidopsis Experiment
+
+## Load data set 
+
+```{r}
+# Read text file #
+seedling <- read.delim("~/../Github/BrassicaRpf/data/seedlingbiomass.txt", sep = ",", head = TRUE)
+
+# Calculate relative biomass # 
+seedling$Biomass <- (seedling$BiomassPixel)/(seedling$PlatePixel)
+seedling$RelativeBiomass <- (seedling$Biomass)/(seedling$Seedlings)*100
+```
+
+## Make Arabidopsis figure 
+
+```{r}
+# Biomass data points # 
+seedling.rpf <- seedling[ which(seedling$Treatment == "Rpf+"),]
+seedling.con <- seedling[ which(seedling$Treatment == "Rpf-"),]
+
+# Biomass data table # 
+seedling.mean <- aggregate(seedling$RelativeBiomass ~ Treatment, seedling, mean)
+seedling.sem <- aggregate(seedling$RelativeBiomass ~ Treatment, seedling, sem)
+seedling.sem.LL <- seedling.mean[2] + seedling.sem[2]
+seedling.sem.UL <- seedling.mean[2] - seedling.sem[2]
+seedling.table <- data.frame(seedling.mean[1], seedling.mean[2], seedling.sem[2],
+          seedling.sem.LL[1], seedling.sem.UL[1])
+colnames(seedling.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+seedling.table <- seedling.table[order(seedling.table$mean),]
+
+# Plotting Arabidopsis biomass # 
+png(filename="../figures/SupplementaryFig1-Arabidopsiscontrol.png",
+    width = 800, height = 800, res = 96*2)
+par(mar = c(5, 5, 1, 1))
+
+arabid.fig <- plot(jitter(rep(1, length(seedling.con$RelativeBiomass)), amount = 0.1), seedling.con$RelativeBiomass,
+      ylim = c(0, 1), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(seedling.rpf$RelativeBiomass)), amount = 0.1), seedling.rpf$RelativeBiomass, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+
+# Adding mean data pointfor each treatment # 
+points(1, mean(seedling.con$RelativeBiomass), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(seedling.rpf$RelativeBiomass), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('Relative Biomass'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0", "0.5", "1.0"), 
+     at = c(0.0, 0.5, 1.0))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0, 0.5, 1.0), labels = F, tck = -0.02)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.02)
+
+# Adding SEM # 
+arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/SupplementaryFig1-Arabidopsiscontrol.png")
+grid.raster(img)
+
+
+# Statistical test: t-test of Rpf effects on plant biomass
+anova <- aov(seedling$RelativeBiomass ~ seedling$Treatment, data = seedling)
+summary(anova) 
+TukeyHSD(anova) 
+# Results: Rpf did not significantly affect relative biomass (p=0.321, F=1.214, DF=1,5)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
