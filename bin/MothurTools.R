@@ -33,14 +33,14 @@ read.otu <- function(shared = " ", cutoff = "0.03"){
                                            4:(3+mean(matrix.cutoff$numOtus))])
   row.names(matrix.out) <- matrix.cutoff$Group
   return(matrix.out)
-  }
+}
 
 # Import Taxonomy Information
 read.tax <- function(taxonomy = " ", format = "rdp"){
   tax_raw <- read.delim(taxonomy)                 # load genus-level data
   if (format == "rdp"){
-    tax <- cbind(OTU = tax_raw[,1],colsplit(tax_raw[,3], split = "\\;",
-               names=c("Domain","Phylum","Class","Order","Family","Genus")))
+    tax <- cbind(OTU = tax_raw[,1],colsplit(tax_raw[,3], split="\\;",
+                                            names=c("Domain","Phylum","Class","Order","Family","Genus")))
     for (i in 2:7){
       tax[,i] <- gsub("\\(.*$", "", tax[,i])
     }
