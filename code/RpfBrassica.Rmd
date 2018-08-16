@@ -454,7 +454,7 @@ points(2, mean(bac.rpf$value), pch = 21, col = "black",
 box(lwd = 2)
 
 # Y axis labels
-mtext(expression('rRNA gene copy/ g soil'), side = 2,
+mtext(expression('16S rRNA gene copy/ g soil'), side = 2,
       outer = FALSE, cex = 1, line = 3.5, adj = 0.5)
 
 # Major Axes
@@ -481,7 +481,7 @@ arrows(x0 = c(2,1), y0 = bac.table$mean, y1 = bac.table$UCI, angle = 90,
 text(0.7,2.3E6 ,labels="A", col="black", cex=2)
 
 # P-value label
-mtext(text = expression(italic("P")~" = 0.016") , side =3, line = -1.2, adj = 0.95, col="black", cex=0.8)
+mtext(text = expression(italic("P")~" = 0.016") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 2: Rpf effects on fungal abundance # 
 abun.fun.fig <- plot(jitter(rep(1, length(fun.con$value)), amount = 0.1), fun.con$value, 
@@ -528,7 +528,7 @@ arrows(x0 = c(1,2), y0 = fun.table$mean, y1 = fun.table$UCI, angle = 90,
 text(0.7,1.45E6 ,labels="B", col="black", cex=2)
 
 # p-value 
-mtext(text = expression(italic("P")~" = 0.007") , side =3, line = -1.2, adj = 0.95, col="black", cex=0.8)
+mtext(text = expression(italic("P")~" = 0.007") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 3: Rpf effects on fungal abundance # 
 FB.fig <- plot(jitter(rep(1, length(FB.con$FB)), amount = 0.1), FB.con$FB, 
@@ -575,7 +575,7 @@ arrows(x0 = c(1,2), y0 = FB.table$mean, y1 = FB.table$UCI, angle = 90,
 text(0.7,1.45,labels="C", col="black", cex=2)
 
 # p-value 
-mtext(text = expression(italic("P")~" = 0.018") , side =3, line = -1.2, adj = 0.95, col="black", cex=0.8)
+mtext(text = expression(italic("P")~" = 0.018") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 
 # Close Plot Device
 dev.off()
@@ -636,13 +636,8 @@ ttest <- function(reg, coefnum, val){
 
 # Run all alpha diversity analyses
 run.all <- TRUE
-```
 
 
-## Soil bacteria beta and alpha diversity 
-
-
-```{r}
   # design = general design file for experiment
   # shared = OTU table from mothur with sequence similarity clustering
   # tax    = Taxonomy for 97% similarity OTUs
@@ -658,9 +653,13 @@ OTU <- read.otu(shared = shared, cutoff = "0.03") # 97% similarity
 OTU.tax <- read.tax(taxonomy = taxon, format = "rdp")  
 # Import Phylogenetic tree 
 OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.2") 
+```
 
 
+## Soil bacteria beta and alpha diversity 
 
+
+```{r}
 ### Sequence Coverage 
 # Remove OTUs with less than two occurences across all sites # 
 OTU <- OTU[, which(colSums(OTU) >= 2)]
@@ -723,15 +722,15 @@ even.sem <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, sem, na.rm = TRUE),
 Brassica.div <- data.frame(design[sort(row.names(design)), ], rich.mean, even.mean)
 
 # Take averages of technial reps
-rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, rich = mean(rich.mean))
-even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, even = mean(even.mean))
+rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, rich = mean(rich.mean))
+even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, even = mean(even.mean))
 
 # Reshape data 
 rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
-                   idvar = c("treatment", "rep.num"), direction = "wide")
+                   idvar = c("treatment", "rep"), direction = "wide")
 
 even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
-                   idvar = c("treatment", "rep.num"), direction = "wide")
+                   idvar = c("treatment", "rep"), direction = "wide")
 
 
 ## Statistical test: One-way ANOVA of Rpf and metabolic status
@@ -756,6 +755,10 @@ for (i in 1:dim(OTU)[1]){
 
 # Log-transform relative abundances
 OTU.REL.log <- decostand(OTU, method="log")
+
+### Just RNA ####
+#OTU.REL.log <- decostand(OTU, method="log")
+########
 
 Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
 Brassica.dis.mean <- mean(Brassica.bc.dis)
@@ -786,7 +789,7 @@ for(i in 1:length(treatment.div)){
 mean(treatment.dis)
 
 # Plot figure # 
-png(filename="../figures/Figure5A-AllBacteriaOrdination.png",
+png(filename="../figures/SupplementaryFigure-AllBacteriaOrdination.png",
     width = 1800, height = 800, res = 96*2)
 
 layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
@@ -809,14 +812,13 @@ axis(side = 4, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 abline(h = 0, v = 0, lty = 3)
 
 # Panel label # 
-text(-0.45, 0.35, labels="A", col="black", cex=3)
+#text(-0.45, 0.35, labels="A", col="black", cex=3)
 
 box(lwd = 2)
 
 # Subset data
-Brassica.div.sort <- Brassica.div[order(Brassica.div[,1]) ,]
-all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div.sort))
-Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div.sort)
+all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div))
+Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div)
 
 # Active community
 Brassica.active.rpf <- Brassica.points[ which(Brassica.points$type == "cDNA" &
@@ -832,25 +834,39 @@ Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
 # Add points
 # Active community Rpf+
 points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
-       cex = 3.5, col = "black", bg = "Black", lwd= 2.5)
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
 # Active community Rpf-
 points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
-       cex = 3.5, col = "lightgrey", bg = "lightgrey", lwd= 2.5)   
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)   
 # Total community Rpf+ 
 points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 24,
-       cex = 3.5, col = "black", bg = "Black", lwd= 2.5)
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
 # Total community Rpf-
 points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 24,
-       cex = 3.5, col = "lightgrey", bg = "lightgrey", lwd= 2.5)
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)
+
+# Add elipcses 
+# Active Rpf+
+ordiellipse(cbind(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2]), Brassica.active.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Active Rpf-
+ordiellipse(cbind(Brassica.active.no[ ,1], Brassica.active.no[ ,2]), Brassica.active.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf+
+ordiellipse(cbind(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2]), Brassica.total.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf- 
+ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.total.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
 
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
 legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pch = c(21, 21, 24, 24),
-       col = c("lightgrey", "Black", "lightgrey", "Black"),
-       pt.bg = c("lightgrey", "Black", "lightgrey", "Black"),
-       bty = "n", y.intersp = 1, pt.cex = 3.5, cex = 2, lwd= 2.5, lty =  NA)
+       col = c("Black", "Black", "Black", "Black"),
+       pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
+       bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
 
 # Close Plot Device
@@ -858,17 +874,24 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/Figure5A-AllBacteriaOrdination.png")
+img <- readPNG("../figures/SupplementaryFigure-AllBacteriaOrdination.png")
 grid.raster(img)
+
+# Add column for pot number to account of paired/match design
+Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
 
 
 ## Statistical test: PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
-bray.permanova <- adonis(OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
+bray.permanova <- adonis(OTU.REL.log ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
+                           Brassica.div$type*Brassica.div$treatment,
                          method = "bray", binary = FALSE, permutations = 999)
 bray.permanova    
-    # Metabolic status: Significant:                 r2 = 0.22571, p = 0.001
-    # Rpf:              Marginally non-significant:  r2 = 0.06086, p = 0.097
-    # Interaction:      Non-significant:             r2 = 0.03988, p = 0.438 
+    # Metabolic status: Significant:                 r2 = 0.22571, p = 0.001 ***
+    # Rpf:              Marginally non-significant:  r2 = 0.06086, p = 0.083 . 
+    # Interaction:      Non-significant:             r2 = 0.03988, p = 0.447 
+
+#bray.rna.permanova <- adonis(OTU.REL.log ~ Brassica.div[11:20, ]$treatment, method = "bray", binary = FALSE, permutations=999)
+#bray.rna.permanova
 ```
 
 
@@ -928,24 +951,24 @@ even.sem <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, sem, na.rm = TRUE),
 Brassica.div <- data.frame(design[sort(row.names(design)), ], rich.mean, even.mean)
 
 # Take averages of technial reps
-rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, rich = mean(rich.mean))
-even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep.num), summarize, even = mean(even.mean))
+rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, rich = mean(rich.mean))
+even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, even = mean(even.mean))
 
 # Reshape data 
 rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
-                   idvar = c("treatment", "rep.num"), direction = "wide")
+                   idvar = c("treatment", "rep"), direction = "wide")
 
 even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
-                   idvar = c("treatment", "rep.num"), direction = "wide")
+                   idvar = c("treatment", "rep"), direction = "wide")
 
 
-## Statistical test: One-way ANOVA of Rpf and metabolic status
+## Statistical test: two-way ANOVA of Rpf and metabolic status
 # Soil bacterial richness
-rich.anova.c <- aov(rich.mean ~ treatment*type, Brassica.div)
+rich.anova.c <- aov(rich.mean ~ type + treatment + treatment*type, Brassica.div)
 summary(rich.anova.c)
 
 # Soil bacterial evenness 
-even.anova.c <- aov(even.mean ~ treatment*type, Brassica.div)
+even.anova.c <- aov(even.mean ~ type + treatment + treatment*type, Brassica.div)
 summary(even.anova.c)
 
 
@@ -990,8 +1013,9 @@ for(i in 1:length(treatment.div)){
 
 mean(treatment.dis)
 
+
 # Plot figure # 
-png(filename="../figures/Figure5B-GramPositiveOrdination.png",
+png(filename="../figures/Figure5-GramPositiveOrdination.png",
     width = 1800, height = 800, res = 96*2)
 
 layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
@@ -1006,6 +1030,7 @@ plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
      pch = 22, cex = 2.0, type = "n", cex.lab = 2.5, cex.axis = 3,
      axes = FALSE)
 
+
 # Add Axes
 axis(side = 1, labels = T, lwd.ticks = 3, cex.axis = 2, las = 1, tck=-0.025)
 axis(side = 2, labels = T, lwd.ticks = 3, cex.axis = 2, las = 1, tck=-0.025)
@@ -1013,15 +1038,15 @@ axis(side = 3, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 axis(side = 4, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 abline(h = 0, v = 0, lty = 3)
 
+
 # Panel label # 
-text(-0.45, 0.35, labels="B", col="black", cex=3)
+#text(-0.45, 0.35, labels="B", col="black", cex=3)
 
 box(lwd = 2)
 
 # Subset data
-Brassica.div.sort <- Brassica.div[order(Brassica.div[,1]) ,]
-all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div.sort))
-Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div.sort)
+all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div))
+Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div)
 
 # Active community
 Brassica.active.rpf <- Brassica.points[ which(Brassica.points$type == "cDNA" &
@@ -1037,25 +1062,40 @@ Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
 # Add points
 # Active community Rpf+
 points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
-       cex = 3.5, col = "black", bg = "Black", lwd= 2.5)
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
 # Active community Rpf-
 points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
-       cex = 3.5, col = "lightgrey", bg = "lightgrey", lwd= 2.5)   
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)   
 # Total community Rpf+ 
 points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 24,
-       cex = 3.5, col = "black", bg = "Black", lwd= 2.5)
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
 # Total community Rpf-
 points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 24,
-       cex = 3.5, col = "lightgrey", bg = "lightgrey", lwd= 2.5)
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)
+
+# Add elipcses 
+# Active Rpf+
+ordiellipse(cbind(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2]), Brassica.active.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Active Rpf-
+ordiellipse(cbind(Brassica.active.no[ ,1], Brassica.active.no[ ,2]), Brassica.active.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf+
+ordiellipse(cbind(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2]), Brassica.total.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf- 
+ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.total.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+
 
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
 legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pch = c(21, 21, 24, 24),
-       col = c("lightgrey", "Black", "lightgrey", "Black"),
-       pt.bg = c("lightgrey", "Black", "lightgrey", "Black"),
-       bty = "n", y.intersp = 1, pt.cex = 3.5, cex = 2, lwd= 2.5, lty =  NA)
+       col = c("Black", "Black", "Black", "Black"),
+       pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
+       bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
 
 # Close Plot Device
@@ -1063,18 +1103,254 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/Figure5B-GramPositiveOrdination.png")
+img <- readPNG("../figures/Figure5-GramPositiveOrdination.png")
 grid.raster(img)
 
 
+Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
+Brassica.div$pot <- as.factor(Brassica.div$pot)
+
 ## Statistical test: PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
-bray.permanova <- adonis(Gpos.OTU.REL.log ~ Brassica.div$type * Brassica.div$treatment,
+bray.permanova <- adonis(Gpos.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
+                           Brassica.div$type*Brassica.div$treatment,
                          method = "bray", binary = FALSE, permutations = 999)
 bray.permanova    
-    # Metabolic status: Significant:                 r2 = 0.20609, p = 0.001 
-    # Rpf:              Marginally non-significant:  r2 = 0.06795, p = 0.059
-    # Interaction:      Non-significant:             r2 = 0.03812, p = 0.588
+    # Metabolic status: Significant:                 r2 = 0.20609, p = 0.001 ***
+    # Rpf:              Marginally non-significant:  r2 = 0.06795, p = 0.053 . 
+    # Interaction:      Non-significant:             r2 = 0.03812, p = 0.603
 ```
+
+
+## Actinobacteria alpha and beta- diversity 
+
+
+```{r}
+# Subset Gram positive OTU from taxonomy file
+Actino.OTU.tax <- OTU.tax[ which(OTU.tax$Phylum == 'Actinobacteria'), ]
+
+# Subset OTU table to contain only Gram positive bacteria
+Actino.OTU <- match(Actino.OTU.tax$OTU, colnames(OTU))
+Actino.OTU <- sort(c(Actino.OTU-1, Actino.OTU))
+Actino.OTU <- OTU[, Actino.OTU]
+
+# Remove OTUs with less than two occurences across all sites # 
+Actino.OTU <- Actino.OTU[, which(colSums(Actino.OTU) >= 2)]
+
+# Remove mock community # 
+Actino.OTU <- Actino.OTU[1:20, ]
+
+
+### Alpha diversity 
+# Resampling code to estimate alpha diversity (used if run.all = T)
+if (run.all == TRUE){
+  rich <- round(richness.iter(input = Actino.OTU, size = 1000,
+                              iters = 100, shared = "FALSE"), 3)
+  even <- round(evenness.iter(input = Actino.OTU, size = 1000,
+                              iters = 100, shared = "FALSE",
+                              method = "simp_even"), 3)
+  rare <- rarefy(Actino.OTU, 1000, se = FALSE, MARGIN = 1)
+  # Write output to files
+  write.table(rich, "../data/rich.txt", sep = "\t",
+              col.names = T, row.names = T)
+  write.table(even, "../data/even.txt", sep = "\t",
+              col.names = T, row.names = T)
+}
+
+# Read in alpha diversity files from above
+rich2 <- read.table("../data/rich.txt", sep = "\t")
+even2 <- read.table("../data/even.txt", sep = "\t")
+
+# Merge data to design and calculate mean and sem per sample
+rich.data <- merge(design, rich2, by = "row.names")
+row.names(rich.data) <- rich.data$Row.names
+rich.data <- rich.data[sort(row.names(rich.data)), ]
+rich.mean <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, mean, na.rm = TRUE),3)
+rich.sem <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, sem, na.rm = TRUE), 3)
+
+even.data <- merge(design, even2, by = "row.names")
+row.names(even.data) <- even.data$Row.names
+even.data <- even.data[sort(row.names(even.data)), ]
+even.mean <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, mean, na.rm = TRUE),3)
+even.sem <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, sem, na.rm = TRUE),4)
+
+# Make new dataframe merging design file and mean diversity
+Brassica.div <- data.frame(design[sort(row.names(design)), ], rich.mean, even.mean)
+
+# Take averages of technial reps
+rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, rich = mean(rich.mean))
+even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, even = mean(even.mean))
+
+# Reshape data 
+rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep"), direction = "wide")
+
+even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep"), direction = "wide")
+
+
+## Statistical test: two-way ANOVA of Rpf and metabolic status
+# Soil bacterial richness
+rich.anova.c <- aov(rich.mean ~ type + treatment + treatment*type, Brassica.div)
+summary(rich.anova.c)
+
+# Soil bacterial evenness 
+even.anova.c <- aov(even.mean ~ type + treatment + treatment*type, Brassica.div)
+summary(even.anova.c)
+
+
+### Beta Diversity
+# Make presence-absence matrix
+Actino.OTU.PA <- (Actino.OTU > 0) * 1
+
+# Make relative abundence matrix
+Actino.OTU.REL <- Actino.OTU
+for (i in 1:dim(Actino.OTU)[1]){
+  Actino.OTU.REL[i,] <- Actino.OTU[i,]/sum(Actino.OTU[i,])
+  }
+
+# Log-transform relative abundances
+Actino.OTU.REL.log <- decostand(Actino.OTU, method="log")
+
+Brassica.bc.dis <- vegdist(Actino.OTU.REL.log, method = "bray", binary = "FALSE")
+Brassica.dis.mean <- mean(Brassica.bc.dis)
+
+# Principal Coordinates Analysis (PCoA)
+Brassica.PCoA <- cmdscale(Brassica.bc.dis, eig = TRUE, k = 3)
+explainvar1 <- round(Brassica.PCoA$eig[1] / sum(Brassica.PCoA$eig), 3) * 100
+explainvar2 <- round(Brassica.PCoA$eig[2] / sum(Brassica.PCoA$eig), 3) * 100
+explainvar3 <- round(Brassica.PCoA$eig[3] / sum(Brassica.PCoA$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+# Actino.OTU Scores
+Actino.OTU.scores <- t(cor(Brassica.PCoA$points, Actino.OTU.REL))
+Actino.OTU.scores <- as.matrix(Actino.OTU.scores)[,1:2]
+Actino.OTU.scores <- Actino.OTU.scores[abs(Actino.OTU.scores[,1]) > 0.7|abs(Actino.OTU.scores[,2]) > 0.7,]
+
+# Average BC Distance Between Treatments
+Brassica.bc.dis.m <- as.matrix(Brassica.bc.dis)
+all.equal(row.names(Brassica.div), rownames(Brassica.bc.dis.m))
+
+treatment.div <- unique(Brassica.div$treatment)
+treatment.dis <- rep(NA, length(treatment.div))
+for(i in 1:length(treatment.div)){
+  temp <- row.names(Brassica.div[Brassica.div$treatment == treatment.div[i], ])
+  treatment.dis[i] <- Brassica.bc.dis.m[temp[1], temp[2]]
+}
+
+mean(treatment.dis)
+
+
+# Plot figure # 
+png(filename="../figures/Figure5-ActinoOrdination.png",
+    width = 1800, height = 800, res = 96*2)
+
+layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
+
+par(mar = c(7, 10, 1, 0) + 0.5)
+
+plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
+     ylim = c(-0.4, 0.4), xlim = c(-0.5, 0.4),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""), line = 5,
+     #xlab = "", ylab = "", xaxt = "n", yaxt = "n",
+     pch = 22, cex = 2.0, type = "n", cex.lab = 2.5, cex.axis = 3,
+     axes = FALSE)
+
+
+# Add Axes
+axis(side = 1, labels = T, lwd.ticks = 3, cex.axis = 2, las = 1, tck=-0.025)
+axis(side = 2, labels = T, lwd.ticks = 3, cex.axis = 2, las = 1, tck=-0.025)
+axis(side = 3, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
+axis(side = 4, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
+abline(h = 0, v = 0, lty = 3)
+
+
+# Panel label # 
+#text(-0.45, 0.35, labels="B", col="black", cex=3)
+
+box(lwd = 2)
+
+# Subset data
+all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div))
+Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div)
+
+# Active community
+Brassica.active.rpf <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.active.no <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+# Total community
+Brassica.total.rpf <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+
+# Add points
+# Active community Rpf+
+points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
+# Active community Rpf-
+points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)   
+# Total community Rpf+ 
+points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 24,
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
+# Total community Rpf-
+points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 24,
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)
+
+# Add elipcses 
+# Active Rpf+
+ordiellipse(cbind(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2]), Brassica.active.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Active Rpf-
+ordiellipse(cbind(Brassica.active.no[ ,1], Brassica.active.no[ ,2]), Brassica.active.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf+
+ordiellipse(cbind(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2]), Brassica.total.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf- 
+ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.total.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+
+
+# Add Legend Outside
+par(mar = c(4, 0, 5, 1) + 0.5)
+plot.new()
+legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
+       pch = c(21, 21, 24, 24),
+       col = c("Black", "Black", "Black", "Black"),
+       pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
+       bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
+
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Figure5-ActinoOrdination.png")
+grid.raster(img)
+
+
+#Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
+#Brassica.div$pot <- as.factor(Brassica.div$pot)
+
+## Statistical test: PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
+#bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
+#                           Brassica.div$type*Brassica.div$treatment,
+#                         method = "bray", binary = FALSE, permutations = 999)
+bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + 
+                           Brassica.div$type*Brassica.div$treatment,
+                         method = "bray", binary = FALSE, permutations = 999)
+bray.permanova    
+    # Metabolic status: Significant:                 r2 = 0.33, p = 0.001 ***
+    # Rpf:              Marginally non-significant:  r2 = 0.067, p = 0.053 . 
+    # Interaction:      Non-significant:             r2 = 0.04, p = 0.276
+```
+
+
+
 
 
 # 6) Supplementary materials
@@ -1117,6 +1393,50 @@ colnames(df) <- c("Ratio", "Treatment")
 barplot(df$Ratio, names.arg=c("Rpf+", "Rpf-") )
 
 ```
+
+
+## Actinobacteria: Gram negative ratios
+
+```{r}
+# Subsetting 
+OTU.Rpf <- OTU[c(6:10, 16:20), ]
+Actino.OTU.Rpf <- Actino.OTU[c(6:10, 16:20), ]
+
+OTU.Con <- OTU[c(1:5, 11:15), ]
+Actino.OTU.Con <- Actino.OTU[c(1:5, 11:15), ]
+  
+# Calculate sum reads for gram positive 
+Actino.Rpf <- as.vector(rowSums(Actino.OTU.Rpf))      
+All.Rpf <- as.vector(rowSums(OTU.Rpf))  
+Actino.Con <- as.vector(rowSums(Actino.OTU.Con))       
+All.Con <- as.vector(rowSums(OTU.Con))  
+
+# Calculate Gram negative read sum 
+Gram.neg.Rpf <- All.Rpf - Actino.Rpf  
+Gram.neg.Con <- All.Con - Actino.Con  
+
+# Calculate ratio of Gram postive : Gram negative 
+Rpf.Gram.Ratio <- Actino.Rpf / Gram.neg.Rpf
+Con.Gram.Ratio <- Actino.Con / Gram.neg.Con
+
+Gram.Ratio.ttest <- t.test(Con.Gram.Ratio, Rpf.Gram.Ratio, alternative="greater")
+Gram.Ratio.ttest  # Non-significant: t = 1.2977, df = 15.203, p = 0.1069
+
+mean.Rpf.Gram.Ratio <- mean(Rpf.Gram.Ratio)
+mean.Con.Gram.Ratio <- mean(Con.Gram.Ratio)
+
+df <- rbind(as.numeric(mean.Rpf.Gram.Ratio), as.numeric(mean.Con.Gram.Ratio))
+df <- as.data.frame(df)
+df$Treatment <- c("Rpf+", "Rpf-")
+colnames(df) <- c("Ratio", "Treatment")
+
+barplot(df$Ratio, names.arg=c("Rpf+", "Rpf-") )
+
+```
+
+
+
+
 
 ## Control Arabidopsis experiment 
 
