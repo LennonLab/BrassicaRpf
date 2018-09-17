@@ -5,37 +5,26 @@ date: "June 25, 2018"
 output: html_document
 ---
 
-
 Questions: 
 
 1) Does resuscitating the soil microbial seed bank with Rpf alter plant biomass and reproductive output?
+2) How does Rpf alter the soil microbial abundance, activity, and community structure?
 
-2) How does Rpf alter plant-soil microbe interactions?
+Data Analysis:
 
-
-Methods:
-
-1) Conducted 6-week growth chamber experiment using Brassica rapa grown in live field soil treated with either weekly application of recombinant Rpf or control protein buffer solution. 
-
-2) Measured weekly soil CO2 respiration from experimental pots using 1 gram of soil incubated for 24 h. 
-
-3) Measured plant traits at the end of the exeriment. 
-
-4) Quantified soil bacterial and fungal abundance using qPCR of the 16S rRNA and ITS gene, respectively, from week 6 of the experiment.
-
-5) Determined Rpf and metabolic status effects on the soil bacterial community structure by sequencing soil bacterial 16S rRNA using MiSeq Illumina and performing alpha- and beta-diversity analyses.  
-
+1a) Performed t-test to test Rpf effects on plant traits (i.e., seed number, biomass, SLA, height).
+2a) Performed repeated-measures ANOVA (RM-ANOVA) to test Rpf effects on soil respiration.
+2b) Performed t-test to test Rpf effects on soil microbial abundance (i.e., bacterial and fungal).
+2c) Generated a PCoA and performed PERMANOVA to test Rpf and metabolic status effects on soil bacterial community composition. 
 
 # Set working environment and load packages 
 
 ```{r setup, message = FALSE, warning = FALSE}
-# For analyses for figures 2 to 4 
 # Clear and set working directory 
 rm(list = ls())
-getwd()
 knitr::opts_knit$set(root.dir = "~/../Github/BrassicaRpf/data")
 
-# Require or install packages 
+# Require and/or install packages 
 package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'pander', 'reshape', 'grid', 'png', 'car', 'bbmle', 'reshape2', 'ggplot2') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
@@ -107,7 +96,6 @@ flower.table <- flower.table[order(flower.table$mean),]
 # Generating 3 panel figure showing Rpf effects on plant traits # 
 png(filename="../figures/Figure1-PlantTraits.png",
     width = 1200, height = 800, res = 96*2)
-
 par(oma=c(7,3,7,1), mar=c(2,3,3,3.5), mfrow=c(1,3))
 
 # Plotting first panel for shoot biomass # 
@@ -284,7 +272,7 @@ height.ttest  # Non-significant: t = 1.1102, df = 13.384, p = 0.2865
 ```
 
 
-# 2) Rpf effects on soil microbial CO2 respiration 
+# 2a) Rpf effects on soil microbial CO2 respiration 
 
 ```{r}
 # Load soil respirtation data #
@@ -347,7 +335,6 @@ ggsave("../figures/Figure2-Soilrespiration.png", width = 20, height = 15, units 
 CO2.rm <- lme(StdCO2 ~ Week*Treatment, random = ~ 1 | soil,
               correlation = corAR1(form = ~1 | soil), 
               data = CO2.m)
-
 # Make ANOVA table #
 set.caption("RMANOVA for soil CO2 respiration")
 pander(anova(CO2.rm)) 
@@ -357,12 +344,11 @@ pander(anova(CO2.rm))
 ```
 
 
-# 3) Effect of Rpf on soil bacterial and fungal abundance and F : B ratio
+# 2b) Effect of Rpf on soil microbial abundance
 
 ```{r}
 # Load microbial qPCR abundance data # 
 abundance <- read.csv("qPCR.txt", sep = ",", header = TRUE) 
-
 # remove week 1 data # 
 abundance <- subset(abundance, Week == "6")
 # Reset data frame index # 
@@ -383,7 +369,6 @@ gca.F <- data.sub.fun$stdGeneCopy
 abundance$FB <- (gca.F/gca.B)
 ratioFB <- abundance[1:18, ]
 ratioFB <- subset(ratioFB, select=(c(Treatment, Week, FB)))
-
 
 # Subsetting abundance dataset 
 data.sub <- subset(abundance, select=(c(Treatment, Gene, stdGeneCopy)))
@@ -637,7 +622,7 @@ ttest <- function(reg, coefnum, val){
 # Run all alpha diversity analyses
 run.all <- TRUE
 
-
+# Load files
   # design = general design file for experiment
   # shared = OTU table from mothur with sequence similarity clustering
   # tax    = Taxonomy for 97% similarity OTUs
@@ -657,7 +642,6 @@ OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.2")
 
 
 ## Soil bacteria beta and alpha diversity 
-
 
 ```{r}
 ### Sequence Coverage 
@@ -682,7 +666,6 @@ goods.c <- function(x = ""){
 goods.c.Brassica <- goods.c(OTU)
 mean.good.c <- mean(goods.c.Brassica) # 0.984  Good mean coverage
 min.good.c <- min(goods.c.Brassica) # 0.967  Good lowest coverage
-
 
 
 ### Alpha diversity 
@@ -728,7 +711,6 @@ even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, even = m
 # Reshape data 
 rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
                    idvar = c("treatment", "rep"), direction = "wide")
-
 even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
                    idvar = c("treatment", "rep"), direction = "wide")
 
@@ -742,6 +724,13 @@ summary(rich.anova.c)
 even.anova.c <- aov(even.mean ~ treatment*type, Brassica.div)
 summary(even.anova.c)
 
+# Alpha diversity: Wilcox Signed Rank Test to account for paired design
+# Richness 
+rich.wilcox <- wilcox.test(Brassica.div$rich.mean[which(Brassica.div$treatment == 'Rpf-')], Brassica.div$rich.mean[which(Brassica.div$treatment == 'Rpf+')], paired=TRUE)
+rich.wilcox   # No effect of rpf
+# Evenness 
+even.wilcox <- wilcox.test(Brassica.div$even.mean[which(Brassica.div$treatment == 'Rpf-')], Brassica.div$even.mean[which(Brassica.div$treatment == 'Rpf+')], paired=TRUE)
+even.wilcox   # No effect of rpf
 
 ### Beta Diversity
 # Make presence-absence matrix
@@ -755,10 +744,6 @@ for (i in 1:dim(OTU)[1]){
 
 # Log-transform relative abundances
 OTU.REL.log <- decostand(OTU, method="log")
-
-### Just RNA ####
-#OTU.REL.log <- decostand(OTU, method="log")
-########
 
 Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
 Brassica.dis.mean <- mean(Brassica.bc.dis)
@@ -810,9 +795,6 @@ axis(side = 2, labels = T, lwd.ticks = 3, cex.axis = 2, las = 1, tck=-0.025)
 axis(side = 3, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 axis(side = 4, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 abline(h = 0, v = 0, lty = 3)
-
-# Panel label # 
-#text(-0.45, 0.35, labels="A", col="black", cex=3)
 
 box(lwd = 2)
 
@@ -868,7 +850,6 @@ legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
-
 # Close Plot Device
 dev.off()
 graphics.off()
@@ -877,26 +858,21 @@ graphics.off()
 img <- readPNG("../figures/SupplementaryFigure-AllBacteriaOrdination.png")
 grid.raster(img)
 
-# Add column for pot number to account of paired/match design
+# Statistical test 
+# Add factor for pot number to account of paired/match design of study
 Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
+Brassica.div$pot <- as.factor(Brassica.div$pot) #unranked order
 
-
-## Statistical test: PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
-bray.permanova <- adonis(OTU.REL.log ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
-                           Brassica.div$type*Brassica.div$treatment,
+# PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
+all.bray.permanova <- adonis(OTU.REL.log ~ type + treatment + pot + 
+                          type*treatment , data = Brassica.div,
                          method = "bray", binary = FALSE, permutations = 999)
-bray.permanova    
-    # Metabolic status: Significant:                 r2 = 0.22571, p = 0.001 ***
-    # Rpf:              Marginally non-significant:  r2 = 0.06086, p = 0.083 . 
-    # Interaction:      Non-significant:             r2 = 0.03988, p = 0.447 
 
-#bray.rna.permanova <- adonis(OTU.REL.log ~ Brassica.div[11:20, ]$treatment, method = "bray", binary = FALSE, permutations=999)
-#bray.rna.permanova
+all.bray.permanova  
 ```
 
 
 ## Gram positive bacteria alpha and beta- diversity 
-
 
 ```{r}
 # Subset Gram positive OTU from taxonomy file
@@ -912,7 +888,6 @@ Gpos.OTU <- Gpos.OTU[, which(colSums(Gpos.OTU) >= 2)]
 
 # Remove mock community # 
 Gpos.OTU <- Gpos.OTU[1:20, ]
-
 
 ### Alpha diversity 
 # Resampling code to estimate alpha diversity (used if run.all = T)
@@ -1030,17 +1005,12 @@ plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
      pch = 22, cex = 2.0, type = "n", cex.lab = 2.5, cex.axis = 3,
      axes = FALSE)
 
-
 # Add Axes
 axis(side = 1, labels = T, lwd.ticks = 3, cex.axis = 2, las = 1, tck=-0.025)
 axis(side = 2, labels = T, lwd.ticks = 3, cex.axis = 2, las = 1, tck=-0.025)
 axis(side = 3, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 axis(side = 4, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 abline(h = 0, v = 0, lty = 3)
-
-
-# Panel label # 
-#text(-0.45, 0.35, labels="B", col="black", cex=3)
 
 box(lwd = 2)
 
@@ -1097,7 +1067,6 @@ legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
-
 # Close Plot Device
 dev.off()
 graphics.off()
@@ -1106,23 +1075,19 @@ graphics.off()
 img <- readPNG("../figures/Figure5-GramPositiveOrdination.png")
 grid.raster(img)
 
-
+# Factoring pot number for match/pair design
 Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
 Brassica.div$pot <- as.factor(Brassica.div$pot)
 
-## Statistical test: PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
-bray.permanova <- adonis(Gpos.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
+## Statistical test: PERMANOVA to test Rpf and metabolic status effects on gram positive bacteria composition
+gpos.bray.permanova <- adonis(Gpos.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot +
                            Brassica.div$type*Brassica.div$treatment,
                          method = "bray", binary = FALSE, permutations = 999)
-bray.permanova    
-    # Metabolic status: Significant:                 r2 = 0.20609, p = 0.001 ***
-    # Rpf:              Marginally non-significant:  r2 = 0.06795, p = 0.053 . 
-    # Interaction:      Non-significant:             r2 = 0.03812, p = 0.603
+gpos.bray.permanova    
 ```
 
 
 ## Actinobacteria alpha and beta- diversity 
-
 
 ```{r}
 # Subset Gram positive OTU from taxonomy file
@@ -1264,10 +1229,6 @@ axis(side = 3, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 axis(side = 4, labels = F, lwd.ticks = 3, cex.axis = 1, las = 1, tck=-0.025)
 abline(h = 0, v = 0, lty = 3)
 
-
-# Panel label # 
-#text(-0.45, 0.35, labels="B", col="black", cex=3)
-
 box(lwd = 2)
 
 # Subset data
@@ -1313,7 +1274,6 @@ ordiellipse(cbind(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2]), Brassica.to
 ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.total.no$treatment, kind="sd", conf=0.95,
             lwd=2, lty=3, draw="lines", col="black", label=FALSE)
 
-
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
@@ -1323,7 +1283,6 @@ legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
-
 # Close Plot Device
 dev.off()
 graphics.off()
@@ -1332,25 +1291,16 @@ graphics.off()
 img <- readPNG("../figures/Figure5-ActinoOrdination.png")
 grid.raster(img)
 
+# Adding pot number factor 
+Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
+Brassica.div$pot <- as.factor(Brassica.div$pot)
 
-#Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
-#Brassica.div$pot <- as.factor(Brassica.div$pot)
-
-## Statistical test: PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
-#bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
-#                           Brassica.div$type*Brassica.div$treatment,
-#                         method = "bray", binary = FALSE, permutations = 999)
-bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + 
+## Statistical test: PERMANOVA to test Rpf and metabolic status effects on Actinobacteria composition
+act.bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
                            Brassica.div$type*Brassica.div$treatment,
                          method = "bray", binary = FALSE, permutations = 999)
-bray.permanova    
-    # Metabolic status: Significant:                 r2 = 0.33, p = 0.001 ***
-    # Rpf:              Marginally non-significant:  r2 = 0.067, p = 0.053 . 
-    # Interaction:      Non-significant:             r2 = 0.04, p = 0.276
+act.bray.permanova    
 ```
-
-
-
 
 
 # 6) Supplementary materials
@@ -1375,27 +1325,90 @@ All.Con <- as.vector(rowSums(OTU.Con))
 Gram.neg.Rpf <- All.Rpf - Gram.pos.Rpf  
 Gram.neg.Con <- All.Con - Gram.pos.Con  
 
-# Calculate ratio of Gram postive : Gram negative 
-Rpf.Gram.Ratio <- Gram.pos.Rpf / Gram.neg.Rpf
-Con.Gram.Ratio <- Gram.pos.Con / Gram.neg.Con
+# Calculate ratio of Gram postive : Gram negative values
+Rpf.Gram.Ratio <- Gram.pos.Rpf / Gram.neg.Rpf  ## points for Rpf+ Ratio
+Con.Gram.Ratio <- Gram.pos.Con / Gram.neg.Con  ## points for Rpf- Ratio
 
+# Generate data table for figure
+dat <- cbind(Rpf.Gram.Ratio, Con.Gram.Ratio)
+dat.m <- melt(dat)
+dat.m <- dat.m[, 2:3]
+colnames(dat.m) <- c("Treatment", "Ratio")
+dat.m$Treatment <- gsub('Rpf.Gram.Ratio', 'Rpf+', dat.m$Treatment)
+dat.m$Treatment <- gsub('Con.Gram.Ratio', 'Rpf-', dat.m$Treatment)
+
+# Gram Ratio table # 
+GramRatio.mean <- aggregate(dat.m$Ratio ~ Treatment, dat.m, mean)
+GramRatio.sem <- aggregate(dat.m$Ratio ~ Treatment, dat.m, sem)
+GramRatio.sem.LL <- GramRatio.mean[2] + GramRatio.sem[2]
+GramRatio.sem.UL <- GramRatio.mean[2] - GramRatio.sem[2]
+GramRatio.table <- data.frame(GramRatio.mean[1], GramRatio.mean[2], GramRatio.sem[2],
+          GramRatio.sem.LL[1], GramRatio.sem.UL[1])
+colnames(GramRatio.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+GramRatio.table <- GramRatio.table[order(GramRatio.table$mean),]
+
+
+# Plotting Gram Ratio # 
+png(filename="../figures/SupplementaryFig2-GramRatio.png",
+    width = 800, height = 800, res = 96*2)
+par(mar = c(5, 5, 1, 1))
+
+arabid.fig <- plot(jitter(rep(1, length(Con.Gram.Ratio)), amount = 0.1), Con.Gram.Ratio,
+      ylim = c(0, 0.2), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(Rpf.Gram.Ratio)), amount = 0.1), Rpf.Gram.Ratio, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+
+# Adding mean data point for each treatment # 
+points(1, mean(Con.Gram.Ratio), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(Rpf.Gram.Ratio), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('Ratio'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0", "0.1", "0.2"), 
+     at = c(0.0, 0.1, 0.2))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0, 0.1, 0.2), labels = F, tck = -0.02)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.02)
+
+# Adding SEM # 
+arrows(x0 = c(2,1), y0 = GramRatio.table$mean, y1 = GramRatio.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = GramRatio.table$mean, y1 = GramRatio.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/SupplementaryFig2-GramRatio.png")
+grid.raster(img)
+
+
+# T-test for effect of RPf 
 Gram.Ratio.ttest <- t.test(Con.Gram.Ratio, Rpf.Gram.Ratio, alternative="greater")
 Gram.Ratio.ttest  # Non-significant: t = 1.2977, df = 15.203, p = 0.1069
-
-mean.Rpf.Gram.Ratio <- mean(Rpf.Gram.Ratio)
-mean.Con.Gram.Ratio <- mean(Con.Gram.Ratio)
-
-df <- rbind(as.numeric(mean.Rpf.Gram.Ratio), as.numeric(mean.Con.Gram.Ratio))
-df <- as.data.frame(df)
-df$Treatment <- c("Rpf+", "Rpf-")
-colnames(df) <- c("Ratio", "Treatment")
-
-barplot(df$Ratio, names.arg=c("Rpf+", "Rpf-") )
-
 ```
 
 
-## Actinobacteria: Gram negative ratios
+## Actinobacteria: Everything else ratios
 
 ```{r}
 # Subsetting 
@@ -1415,27 +1428,87 @@ All.Con <- as.vector(rowSums(OTU.Con))
 Gram.neg.Rpf <- All.Rpf - Actino.Rpf  
 Gram.neg.Con <- All.Con - Actino.Con  
 
-# Calculate ratio of Gram postive : Gram negative 
+# Calculate ratio of Gram postive : Gram negative  
 Rpf.Gram.Ratio <- Actino.Rpf / Gram.neg.Rpf
 Con.Gram.Ratio <- Actino.Con / Gram.neg.Con
 
+# Generate data table for figure
+dat <- cbind(Rpf.Gram.Ratio, Con.Gram.Ratio)
+dat.m <- melt(dat)
+dat.m <- dat.m[, 2:3]
+colnames(dat.m) <- c("Treatment", "Ratio")
+dat.m$Treatment <- gsub('Rpf.Gram.Ratio', 'Rpf+', dat.m$Treatment)
+dat.m$Treatment <- gsub('Con.Gram.Ratio', 'Rpf-', dat.m$Treatment)
+
+# Gram Ratio table # 
+GramRatio.mean <- aggregate(dat.m$Ratio ~ Treatment, dat.m, mean)
+GramRatio.sem <- aggregate(dat.m$Ratio ~ Treatment, dat.m, sem)
+GramRatio.sem.LL <- GramRatio.mean[2] + GramRatio.sem[2]
+GramRatio.sem.UL <- GramRatio.mean[2] - GramRatio.sem[2]
+GramRatio.table <- data.frame(GramRatio.mean[1], GramRatio.mean[2], GramRatio.sem[2],
+          GramRatio.sem.LL[1], GramRatio.sem.UL[1])
+colnames(GramRatio.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+GramRatio.table <- GramRatio.table[order(GramRatio.table$mean),]
+
+
+# Plotting Gram Ratio # 
+png(filename="../figures/SupplementaryFig3-ActinoToEverythingRatio.png",
+    width = 800, height = 800, res = 96*2)
+par(mar = c(5, 5, 1, 1))
+
+arabid.fig <- plot(jitter(rep(1, length(Con.Gram.Ratio)), amount = 0.1), Con.Gram.Ratio,
+      ylim = c(0, 0.2), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(Rpf.Gram.Ratio)), amount = 0.1), Rpf.Gram.Ratio, pch = 21, 
+       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+
+# Adding mean data point for each treatment # 
+points(1, mean(Con.Gram.Ratio), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(Rpf.Gram.Ratio), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('Ratio'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0", "0.1", "0.2"), 
+     at = c(0.0, 0.1, 0.2))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0, 0.1, 0.2), labels = F, tck = -0.02)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.02)
+
+# Adding SEM # 
+arrows(x0 = c(2,1), y0 = GramRatio.table$mean, y1 = GramRatio.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = GramRatio.table$mean, y1 = GramRatio.table$UCI, angle = 90,
+       length=0.25, lwd = 2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/SupplementaryFig3-ActinoToEverythingRatio.png")
+grid.raster(img)
+
+
+# Statistics
 Gram.Ratio.ttest <- t.test(Con.Gram.Ratio, Rpf.Gram.Ratio, alternative="greater")
-Gram.Ratio.ttest  # Non-significant: t = 1.2977, df = 15.203, p = 0.1069
-
-mean.Rpf.Gram.Ratio <- mean(Rpf.Gram.Ratio)
-mean.Con.Gram.Ratio <- mean(Con.Gram.Ratio)
-
-df <- rbind(as.numeric(mean.Rpf.Gram.Ratio), as.numeric(mean.Con.Gram.Ratio))
-df <- as.data.frame(df)
-df$Treatment <- c("Rpf+", "Rpf-")
-colnames(df) <- c("Ratio", "Treatment")
-
-barplot(df$Ratio, names.arg=c("Rpf+", "Rpf-") )
-
+Gram.Ratio.ttest  # Non-significant: t = 1.3691, df = 13.303, p = 0.09682
 ```
-
-
-
 
 
 ## Control Arabidopsis experiment 
@@ -1475,7 +1548,7 @@ arabid.fig <- plot(jitter(rep(1, length(seedling.con$RelativeBiomass)), amount =
 points(jitter(rep(2, length(seedling.rpf$RelativeBiomass)), amount = 0.1), seedling.rpf$RelativeBiomass, pch = 21, 
        bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
 
-# Adding mean data pointfor each treatment # 
+# Adding mean data point for each treatment # 
 points(1, mean(seedling.con$RelativeBiomass), pch = 21, col = "black", 
        bg = "NA", lwd = 2, cex = 2.5) 
 points(2, mean(seedling.rpf$RelativeBiomass), pch = 21, col = "black", 
