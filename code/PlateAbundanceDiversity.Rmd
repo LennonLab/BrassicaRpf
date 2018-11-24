@@ -1,0 +1,270 @@
+---
+title: "DormancyGPCA - AbundanceDiversity"
+author: "Venus Kuo"
+date: "November 13th, 2017"
+output: pdf_document
+---
+
+# 1) Questions
+
+1. We test whether a concentration gradent of recombiant KBS0714 Rpf protein can alter the diversity and abundance of cultured soil bacteria on NA Petri plates.
+
+
+# 2) Set working environment and load packages
+
+```{r setup}
+# Set working directory #
+rm(list = ls())
+getwd()
+setwd("~/../GitHub/DormancyGPCA/data/") # Venus Computer
+#setwd("~/GitHub/") # For all other computers
+
+# Require or install packages #
+package.list <- c('vegan', 'ggplot2', 'gplots', 'plyr', 'psych', 'corrplot', 'BiodiversityR', 'RColorBrewer') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+} }
+```
+
+
+# 3) Describe, load, and modify data set
+
+plateCfuMorphotypeData.txt : A text file containing the soil sample location, treatment concentration, replicate number, dilution factor, colony counts, and morphology counts. 
+
+Data set modification: 
+1. I calulated colony forming units (CFU) based on colony counts and dilution factor. 
+2. I standardized CFU and colony morphotypes  by soil amount (g). 
+3. I log10 transformed standardized CFU and morphotype.
+4. I log2 transformed the concentration gradient of Rpf treatment due to uneven concentration treatments. 
+
+```{r}
+# Set working directory # 
+setwd("~/../GitHub/DormancyGPCA/data/") # Venus Computer
+
+# Load plateCfuMorphotypeData.txt dataset #
+cfu <- read.csv("plateCfuMorphotypeData.txt",  header=T)
+
+# Calculating and standardizing CFU by soil amount # 
+colony <- cfu$Colonies
+dil.factor <- cfu$Dilution
+soilamount <- cfu$Soil
+cfu$CFU <- colony/dil.factor
+cfu$stdCFU <- cfu$CFU/soilamount
+cfu$stdcfu.log<- log10(cfu$stdCFU) 
+
+# Standardizing unique colony morphotype # 
+uniq <- cfu$Morphotypes
+cfu$stdMorph <- uniq/soilamount
+cfu$stdMorph.log <- log10(cfu$stdMorph)
+
+# Natural log transform Rpf concentration # 
+rpf.conc <- cfu$RpfConcentration
+cfu$rpf <- log2(rpf.conc + 1) # I added +1 to make natural log of 0 as 1 
+
+#View(cfu) # Look at the data set 
+```
+
+
+# 4) Scatterplot visualiation of cultured CFU and morphotypes along Rpf gradient
+
+## Color coding each soil sample by color
+
+```{r}
+# Create a custom color scale for each soil sample #
+myColors <- brewer.pal(3,"Set1")  
+
+# Assign the three soil samples (Peru, Dunn, Indiana Preserves) to each color # 
+names(myColors) <- levels(cfu$Sample)
+
+# Assign soil sample color to colScale # 
+colScale <- scale_colour_manual(name = "Sample", values = myColors)
+```
+
+
+## Line graph visualization of log transformed cultured soil bacterial abundance standardized by soil
+
+```{r}
+# Calculate the average and standard error of means of log transformed standardized CFU  # 
+cfu.mean <- ddply(cfu, c("rpf", "Sample"), summarise, 
+                   mean=mean(stdcfu.log), sem=sd(stdcfu.log)/sqrt(length(stdcfu.log)))
+cfu.mean <- transform(cfu.mean, lower=mean-sem, upper=mean+sem) 
+
+# Line graph # 
+cfu.line <- ggplot(data=cfu.mean, aes(x=rpf, y=mean, colour=Sample)) + 
+  geom_line()
+
+# Edit line graph figure # 
+cfu.plot <- cfu.line +  
+    geom_line(size=1.25) +
+  labs(x=expression(paste("Rpf concentrations, Log2(",mu,"mol/L))")), 
+       y="Log10(CFU/Soil (g))") + 
+  geom_errorbar(aes(ymax=upper, ymin=lower), data=cfu.mean, width = 0.2, size = 0.5) +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=20, margin =margin(0,15,0,0)),
+        axis.text.x=element_text(colour="black", size =20, margin =margin(15,0,0,0)),
+        axis.title.y = element_text(colour="black", size=20,  margin = margin(0,20,0,10)),
+        axis.title.x = element_text(colour="black", size=20,  margin=margin(20,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(-0.35, "cm"),
+        axis.ticks = element_line(size = 1.65, colour="black"),
+        legend.title = element_text(size=15),
+        legend.text=element_text(size=15)) +
+  scale_x_continuous(breaks = round(seq(0, 6, by = 1),1)) + 
+  geom_point(size = 3)
+
+# Plot CFU line graph # 
+cfu.plot
+```
+
+
+## Scatter plot visualization of log transformed cultured soil diversity standardized by soil amount
+
+```{r}
+# Calculate the average and standard error of means of log transformed standardized morphotype  # 
+uniq.mean <- ddply(cfu, c("rpf", "Sample"), summarise, 
+                   mean=mean(stdMorph), sem=sd(stdMorph)/sqrt(length(stdMorph)))
+uniq.mean <- transform(uniq.mean, lower=mean-sem, upper=mean+sem) 
+
+# Line graph morphotype # 
+uniq.line <- ggplot(data=uniq.mean, aes(x=rpf, y=mean, colour=Sample)) + 
+  geom_line()
+
+# Edit line graph figure # 
+uniq.plot <- uniq.line +  
+  geom_line(size=1.25) +
+   labs(x=expression(paste("Rpf concentrations Log2(",mu,"mol/L)")), 
+       y="Morphotype/Soil (g)") +
+  geom_errorbar(aes(ymax=upper, ymin=lower), data=uniq.mean, width = 0.2, size = 0.5) +
+  theme_classic() +
+  theme(axis.text.y=element_text(colour="black", size=20, margin =margin(0,15,0,0)),
+        axis.text.x=element_text(colour="black", size =20, margin =margin(15,0,0,0)),
+        axis.title.y = element_text(colour="black", size=20,  margin = margin(0,20,0,10)),
+        axis.title.x = element_text(colour="black", size=20, margin=margin(20,0,0,0)),
+        panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
+        axis.ticks.length = unit(-0.35, "cm"),
+        axis.ticks = element_line(size = 1.65, colour="black"),
+        legend.title = element_text(size=15),
+        legend.text=element_text(size=15)) +
+  scale_x_continuous(breaks = round(seq(0, 6, by = 1),1)) +
+  geom_point(size = 3) +
+  annotate("text", x =0.1, y=37, label = c("B"), size=12)
+
+# Plot Line graph of morphotype # 
+uniq.plot  
+
+
+```
+
+
+# 5) Fitting quadratic curve to data set
+
+## Soil bacterial CFU
+
+```{r}
+linear.model <-lm(stdcfu.log ~ rpf, cfu)
+summary(linear.model)
+
+file <- paste("~/../GitHub/DormancyGPCA/figure/CFU_vs_Rpf.png", sep="")
+png(filename=file, width=5, height=5, units="in", res=600, pointsize=10)
+
+plot.new()
+par(mfrow=c(1, 1), mar = c(5,5,3,1), oma =c(0,0,2,0))
+
+mod <- lm(stdcfu.log ~ rpf + I(rpf^2), data=cfu)
+dat2 <- data.frame(cbind('rpf'=cfu$rpf, 'cfu'=predict(mod)))
+dat2 <- dat2[order(dat2), ]
+dat2 <- dat2[complete.cases(dat2), ]
+
+r2 <- summary(mod)$r.squared
+coefs <- summary(mod)$coefficients
+summary(mod)
+
+title <- paste("Colonies vs Rpf,\n r-square=", round(r2,2))
+plot(cfu$rpf, cfu$stdcfu.log, main=title, 
+  	xlab="Rpf concentration, log2(umol/L)", ylab="Log10(CFU/Soil(g))",
+  	cex.lab=1.5, cex.main=1.5, pch=19)
+
+
+# predicts + interval
+newx <- seq(min(cfu$rpf), max(cfu$rpf), len=100)
+preds <- predict(mod, data.frame(rpf = newx), interval = "confidence") 
+
+clr <- 'gray' #c(2,2,3,4,5) 
+clr <- adjustcolor(clr, alpha.f = 0.3) 
+polygon(c(rev(newx), newx), c(rev(preds[ ,3]), preds[ ,2]), col = clr, border = NA)
+
+lines(dat2$rpf, dat2$cfu, col="red", lwd=2) # regression line (y~x) 
+lines(lowess(dat2$rpf, dat2$cfu), col="blue", lwd=2) # lowess line (x,y)
+points(cfu$rpf, cfu$cfu, pch=19)
+dev.off()
+
+
+
+```
+
+
+## Plot morphotypes 
+```{r}
+# Perform linear model # 
+linear.model.u <- lm(stdMorph ~rpf, cfu)
+summary(linear.model.u)
+
+# Make quadratic curve fit figure # 
+file <- paste("~/../GitHub/DormancyGPCA/figure/Morphotypes_vs_Rpf.png", sep="")
+png(filename=file, width=5, height=5, units="in", res=600, pointsize=10)
+
+plot.new()
+par(mfrow=c(1, 1), mar = c(5,5,3,1), oma =c(0,0,2,0))
+
+# Quadratic curve #
+mod <- lm(stdMorph ~ rpf + I(rpf^2), data=cfu)
+#mod <- lm(stdMorph ~ rpf, cfu)
+dat2 <- data.frame(cbind('rpf'=cfu$rpf, 'stdMorph'=predict(mod)))
+dat2 <- dat2[order(dat2), ]
+dat2 <- dat2[complete.cases(dat2), ]
+
+r2 <- summary(mod)$r.squared
+coefs <- summary(mod)$coefficients
+summary(mod)
+
+title <- paste("Morphotypes vs Rpf,\n r-square=", round(r2,2))
+plot(cfu$rpf, cfu$stdMorph, main=title, 
+  	xlab="Rpf concentration, log2(umol/L)", ylab="Morphotypes/Soil (g)",
+  	cex.lab=1.5, cex.main=1.5, pch=19)
+
+# predicts + interval
+newx <- seq(min(cfu$rpf), max(cfu$rpf), len=100)
+preds <- predict(mod, data.frame(rpf = newx), interval = "confidence") 
+
+clr <- 'gray' #c(2,2,3,4,5) 
+clr <- adjustcolor(clr, alpha.f = 0.3) 
+polygon(c(rev(newx), newx), c(rev(preds[ ,3]), preds[ ,2]), col = clr, border = NA)
+
+lines(dat2$rpf, dat2$stdMorph, col="red", lwd=2) # regression line (y~x) 
+lines(lowess(cfu$rpf, cfu$stdMorph), col="blue", lwd=2) # lowess line (x,y)
+points(cfu$rpf, cfu$stdMorph, pch=19)
+dev.off()
+
+```
+
+
+# Generalized Linear Models # 
+
+```{r}
+# Poisson Regression # 
+# Used when predicting an outcome variable representing counts from a set of continuous predictor variables #
+fit.cfu <- glm(stdcfu.log ~ rpf , data= cfu , family=quasipoisson())
+summary(fit.cfu)
+
+fit.uc <- glm(stdMorph~rpf,data=cfu,family=poisson())
+summary(fit.uc)
+```
+
+
+
+
+
+
+
