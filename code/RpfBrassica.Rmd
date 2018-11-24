@@ -125,7 +125,7 @@ axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
 axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at=c(0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.05)
 
@@ -169,7 +169,7 @@ axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
 axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at=c(0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.05)
 
@@ -212,7 +212,7 @@ axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
 axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at=c(0, 5, 10, 15), labels = F, tck = -0.05)
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.05)
 
@@ -226,7 +226,7 @@ arrows(x0 = c(2,1), y0 = flower.table$mean, y1 = flower.table$UCI, angle = 90,
 text(0.65,14.5 ,labels="C", col="black", cex=2)
 
 # p-value label 
-mtext(text = expression(italic("P")~" = 0.097") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("P")~" = .097") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 
 # Close Plot Device
 dev.off()
@@ -310,7 +310,7 @@ co <- ggplot(CO2.means.sem, aes(x=Week, y=mean, colour=Treatment, group=Treatmen
       geom_point(aes(shape=Treatment), position=pd, size=4) +
       scale_shape_manual(values=c(16, 16)) +
       xlab("Time (weeks)") +
-      ylab(expression(Soil~respiration~(ppm~CO[2]~d^-1/~g~soil))) 
+      ylab(expression(Soil~respiration~(ppm~CO[2]~d^-1~g^-1~soil))) 
 
 co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250), 
                      sec.axis = sec_axis(~ . * 1, labels = c(" "," "," ", " ", " "))) +
@@ -324,8 +324,8 @@ co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250),
           panel.border = element_rect(linetype = "solid", colour = "black", size = 2, fill = NA),
           legend.position="none") +
     scale_color_manual(values=c('gray15','gray15')) + 
-  annotate("text", x = 2.5, y = 750, label = "Rpf-", cex=7) + 
-  annotate("text", x = 4.5, y = 250, label = "Rpf+", cex=7)
+  annotate("text", x = 2.5, y = 750, label = "-Rpf", cex=7) + 
+  annotate("text", x = 4.5, y = 250, label = "+Rpf", cex=7)
 
 ggsave("../figures/Figure2-Soilrespiration.png", width = 20, height = 15, units = "cm")
 
@@ -451,7 +451,7 @@ axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
      at=c(0.0E0, 8.0E5, 1.6E6, 2.4E6), labels = F, tck = -0.05)
 
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.05)
@@ -498,7 +498,7 @@ axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
      at=c(0.0E0, 5.0E5, 1.0E6, 1.5E6), labels = F, tck = -0.05)
 
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.05)
@@ -545,7 +545,7 @@ axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
      at=c(0.0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
 
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.05)
@@ -601,7 +601,7 @@ source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/MothurTools.R")
 source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/phylodiversity2.R")
 
 # Load packages # 
-package.list <- c('vegan', 'plyr' , 'car', 'grid', 'png', 'ape', 'picante', 'ade4', 'phytools', 'phangorn', 'indicspecies', 'viridis' ,  'BiodiversityR') 
+package.list <- c('vegan', 'plyr', 'grid', 'png', 'picante', 'ade4',  'phangorn', 'indicspecies', 'BiodiversityR') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -717,6 +717,15 @@ even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
 
 ## Statistical test: One-way ANOVA of Rpf and metabolic status
 # Soil bacterial richness
+trans <- Brassica.div[ which(Brassica.div$type == 'cDNA'), ]
+gDNA <- Brassica.div[ which(Brassica.div$type == 'DNA'), ]
+
+trans.aov <- aov(rich.mean ~ treatment, trans)
+summary(trans.aov)
+
+gDNA.aov <- aov(rich.mean ~ treatment, gDNA)
+summary(gDNA.aov)
+
 rich.anova.c <- aov(rich.mean ~ treatment*type, Brassica.div)
 summary(rich.anova.c)
 
@@ -745,6 +754,7 @@ for (i in 1:dim(OTU)[1]){
 # Log-transform relative abundances
 OTU.REL.log <- decostand(OTU, method="log")
 
+# Generate sample distance matrix from log-transformed relative abundance of OTU
 Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
 Brassica.dis.mean <- mean(Brassica.bc.dis)
 
@@ -844,7 +854,7 @@ ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.tota
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
-legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
+legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        pch = c(21, 21, 24, 24),
        col = c("Black", "Black", "Black", "Black"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
@@ -867,8 +877,20 @@ Brassica.div$pot <- as.factor(Brassica.div$pot) #unranked order
 all.bray.permanova <- adonis(OTU.REL.log ~ type + treatment + pot + 
                           type*treatment , data = Brassica.div,
                          method = "bray", binary = FALSE, permutations = 999)
-
 all.bray.permanova  
+
+# Indentify indicator species 
+spe.corr <- add.spec.scores(Brassica.PCoA, OTU.REL.log, 
+                            method = "cor.scores")$cproj
+corrcut <- 0.94 # User defined cutoff
+imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+imp.spp
+imp.otu <- as.vector(rownames(imp.spp))
+imp.otu
+
+imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu | OTU.tax$OTU == "Otu00014" | OTU.tax$OTU == "Otu01640" |OTU.tax$OTU == "Otu02609" ), ]
+imp.spp.lst
+
 ```
 
 
@@ -1061,7 +1083,7 @@ ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.tota
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
-legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
+legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        pch = c(21, 21, 24, 24),
        col = c("Black", "Black", "Black", "Black"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
@@ -1080,10 +1102,22 @@ Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
 Brassica.div$pot <- as.factor(Brassica.div$pot)
 
 ## Statistical test: PERMANOVA to test Rpf and metabolic status effects on gram positive bacteria composition
-gpos.bray.permanova <- adonis(Gpos.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot +
-                           Brassica.div$type*Brassica.div$treatment,
+gpos.bray.permanova <- adonis(Gpos.OTU.REL ~ type + treatment + pot +
+                           type*treatment, data = Brassica.div, 
                          method = "bray", binary = FALSE, permutations = 999)
 gpos.bray.permanova    
+
+# Indentify indicator species 
+spe.corr <- add.spec.scores(Brassica.PCoA, Gpos.OTU.REL, 
+                            method = "cor.scores")$cproj
+corrcut <- 0.94 # User defined cutoff
+imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+imp.spp
+imp.otu <- as.vector(rownames(imp.spp))
+imp.otu
+
+imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu), ]
+imp.spp.lst
 ```
 
 
@@ -1093,7 +1127,7 @@ gpos.bray.permanova
 # Subset Gram positive OTU from taxonomy file
 Actino.OTU.tax <- OTU.tax[ which(OTU.tax$Phylum == 'Actinobacteria'), ]
 
-# Subset OTU table to contain only Gram positive bacteria
+# Subset OTU table to contain only Actinobacteria
 Actino.OTU <- match(Actino.OTU.tax$OTU, colnames(OTU))
 Actino.OTU <- sort(c(Actino.OTU-1, Actino.OTU))
 Actino.OTU <- OTU[, Actino.OTU]
@@ -1158,9 +1192,27 @@ even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
 rich.anova.c <- aov(rich.mean ~ type + treatment + treatment*type, Brassica.div)
 summary(rich.anova.c)
 
+# One-way ANOVA based on Metabolic status
+trans <- Brassica.div[ which(Brassica.div$type == 'cDNA'), ]
+gDNA <- Brassica.div[ which(Brassica.div$type == 'DNA'), ]
+
+trans.aov <- aov(rich.mean ~ treatment, trans)
+summary(trans.aov)
+
+gDNA.aov <- aov(rich.mean ~ treatment, gDNA)
+summary(gDNA.aov)
+
+
+
 # Soil bacterial evenness 
 even.anova.c <- aov(even.mean ~ type + treatment + treatment*type, Brassica.div)
 summary(even.anova.c)
+
+trans.e.aov <- aov(even.mean ~ treatment, trans)
+summary(trans.e.aov)
+
+gDNA.e.aov <- aov(even.mean ~ treatment, gDNA)
+summary(gDNA.e.aov)
 
 
 ### Beta Diversity
@@ -1277,7 +1329,7 @@ ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.tota
 # Add Legend Outside
 par(mar = c(4, 0, 5, 1) + 0.5)
 plot.new()
-legend(0, 1, c("Active Rpf-", "Active Rpf+", "Total Rpf-", "Total Rpf+"),
+legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        pch = c(21, 21, 24, 24),
        col = c("Black", "Black", "Black", "Black"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
@@ -1299,8 +1351,51 @@ Brassica.div$pot <- as.factor(Brassica.div$pot)
 act.bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
                            Brassica.div$type*Brassica.div$treatment,
                          method = "bray", binary = FALSE, permutations = 999)
-act.bray.permanova    
+act.bray.permanova   
+
+# Indentify indicator species 
+spe.corr <- add.spec.scores(Brassica.PCoA, Actino.OTU.REL.log, 
+                            method = "cor.scores")$cproj
+corrcut <- 0.7 # User defined cutoff
+imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+imp.spp
+imp.otu <- as.vector(rownames(imp.spp))
+imp.otu
+
+imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu), ]
+imp.spp.lst
+
+fit <- envfit(Brassica.PCoA, Actino.OTU.REL.log, perm = 999)
+
+
+# Relative abundance of the indicator species with Rpf treatment
+# Subset Class Thermoleophilia
+Thermo.tax <- OTU.tax[ which(OTU.tax$Class == 'Thermoleophilia'), ]
+
+# Subset Actino.OTU.REL.Log to contain only Thermoleophilia
+Thermo.OTU <- match(Thermo.tax$OTU, colnames(Actino.OTU.REL.log))
+Thermo.OTU <- sort(c(Thermo.OTU-1, Thermo.OTU))
+Thermo.OTU <- Actino.OTU.REL.log[, Thermo.OTU]
+
+# Subset between Rpf treatments and calculate means of sum counts
+# +Rpf 
+Thermo.Rpf <- Thermo.OTU[c(5:10, 15:20), ]
+Thermo.Rpf.count <- as.vector(rowSums(Thermo.Rpf))
+mean(Thermo.Rpf.count)
+# -Rpf 
+Thermo.Con <- Thermo.OTU[c(1:5, 10:15), ]
+Thermo.Con.count <- as.vector(rowSums(Thermo.Con))
+mean(Thermo.Con.count)
+
+
+# T-test for effect of RPf 
+Gram.Ratio.ttest <- t.test(Thermo.Con.count, Thermo.Rpf.count)
+Gram.Ratio.ttest
 ```
+
+
+
+
 
 
 # 6) Supplementary materials
@@ -1359,7 +1454,7 @@ arabid.fig <- plot(jitter(rep(1, length(Con.Gram.Ratio)), amount = 0.1), Con.Gra
       las = 1, ylab = "", xlab = "")
       box(lwd = 2)
 points(jitter(rep(2, length(Rpf.Gram.Ratio)), amount = 0.1), Rpf.Gram.Ratio, pch = 21, 
-       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
 
 # Adding mean data point for each treatment # 
 points(1, mean(Con.Gram.Ratio), pch = 21, col = "black", 
@@ -1408,47 +1503,53 @@ Gram.Ratio.ttest  # Non-significant: t = 1.2977, df = 15.203, p = 0.1069
 ```
 
 
+
+
+
+
+
 ## Actinobacteria: Everything else ratios
 
 ```{r}
-# Subsetting 
+# Subsetting based on Rpf treatment
+# +Rpf treatment
 OTU.Rpf <- OTU[c(6:10, 16:20), ]
 Actino.OTU.Rpf <- Actino.OTU[c(6:10, 16:20), ]
-
+# -Rpf treatment
 OTU.Con <- OTU[c(1:5, 11:15), ]
 Actino.OTU.Con <- Actino.OTU[c(1:5, 11:15), ]
   
-# Calculate sum reads for gram positive 
+# Calculate within sample sum reads for Actino and all 16S based on treatment
 Actino.Rpf <- as.vector(rowSums(Actino.OTU.Rpf))      
 All.Rpf <- as.vector(rowSums(OTU.Rpf))  
 Actino.Con <- as.vector(rowSums(Actino.OTU.Con))       
 All.Con <- as.vector(rowSums(OTU.Con))  
 
 # Calculate Gram negative read sum 
-Gram.neg.Rpf <- All.Rpf - Actino.Rpf  
-Gram.neg.Con <- All.Con - Actino.Con  
+#Gram.neg.Rpf <- All.Rpf - Actino.Rpf  
+#Gram.neg.Con <- All.Con - Actino.Con  
 
-# Calculate ratio of Gram postive : Gram negative  
-Rpf.Gram.Ratio <- Actino.Rpf / Gram.neg.Rpf
-Con.Gram.Ratio <- Actino.Con / Gram.neg.Con
+# Calculate reads ratio of Actinobacteria : all 16S rRNA 
+Rpf.Act.Ratio <- Actino.Rpf / All.Rpf
+Con.Act.Ratio <- Actino.Con / All.Con
 
 # Generate data table for figure
-dat <- cbind(Rpf.Gram.Ratio, Con.Gram.Ratio)
+dat <- cbind(Rpf.Act.Ratio, Con.Act.Ratio)
 dat.m <- melt(dat)
 dat.m <- dat.m[, 2:3]
 colnames(dat.m) <- c("Treatment", "Ratio")
-dat.m$Treatment <- gsub('Rpf.Gram.Ratio', 'Rpf+', dat.m$Treatment)
-dat.m$Treatment <- gsub('Con.Gram.Ratio', 'Rpf-', dat.m$Treatment)
+dat.m$Treatment <- gsub('Rpf.Act.Ratio', 'Rpf+', dat.m$Treatment)
+dat.m$Treatment <- gsub('Con.Act.Ratio', 'Rpf-', dat.m$Treatment)
 
 # Gram Ratio table # 
-GramRatio.mean <- aggregate(dat.m$Ratio ~ Treatment, dat.m, mean)
-GramRatio.sem <- aggregate(dat.m$Ratio ~ Treatment, dat.m, sem)
-GramRatio.sem.LL <- GramRatio.mean[2] + GramRatio.sem[2]
-GramRatio.sem.UL <- GramRatio.mean[2] - GramRatio.sem[2]
-GramRatio.table <- data.frame(GramRatio.mean[1], GramRatio.mean[2], GramRatio.sem[2],
-          GramRatio.sem.LL[1], GramRatio.sem.UL[1])
-colnames(GramRatio.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
-GramRatio.table <- GramRatio.table[order(GramRatio.table$mean),]
+ActRatio.mean <- aggregate(dat.m$Ratio ~ Treatment, dat.m, mean)
+ActRatio.sem <- aggregate(dat.m$Ratio ~ Treatment, dat.m, sem)
+ActRatio.sem.LL <- ActRatio.mean[2] + ActRatio.sem[2]
+ActRatio.sem.UL <- ActRatio.mean[2] - ActRatio.sem[2]
+ActRatio.table <- data.frame(ActRatio.mean[1], ActRatio.mean[2], ActRatio.sem[2],
+          ActRatio.sem.LL[1], ActRatio.sem.UL[1])
+colnames(ActRatio.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+ActRatio.table <- ActRatio.table[order(ActRatio.table$mean),]
 
 
 # Plotting Gram Ratio # 
@@ -1456,18 +1557,18 @@ png(filename="../figures/SupplementaryFig3-ActinoToEverythingRatio.png",
     width = 800, height = 800, res = 96*2)
 par(mar = c(5, 5, 1, 1))
 
-arabid.fig <- plot(jitter(rep(1, length(Con.Gram.Ratio)), amount = 0.1), Con.Gram.Ratio,
+arabid.fig <- plot(jitter(rep(1, length(Con.Act.Ratio)), amount = 0.1), Con.Act.Ratio,
       ylim = c(0, 0.2), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
       cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
       las = 1, ylab = "", xlab = "")
       box(lwd = 2)
-points(jitter(rep(2, length(Rpf.Gram.Ratio)), amount = 0.1), Rpf.Gram.Ratio, pch = 21, 
-       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+points(jitter(rep(2, length(Rpf.Act.Ratio)), amount = 0.1), Rpf.Act.Ratio, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
 
 # Adding mean data point for each treatment # 
-points(1, mean(Con.Gram.Ratio), pch = 21, col = "black", 
+points(1, mean(Con.Act.Ratio), pch = 21, col = "black", 
        bg = "NA", lwd = 2, cex = 2.5) 
-points(2, mean(Rpf.Gram.Ratio), pch = 21, col = "black", 
+points(2, mean(Rpf.Act.Ratio), pch = 21, col = "black", 
        bg = "NA", lwd = 2, cex = 2.5)  
 
 box(lwd = 2)
@@ -1485,15 +1586,15 @@ axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
      at=c(0.0, 0.1, 0.2), labels = F, tck = -0.02)
 
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.02)
 
 # Adding SEM # 
-arrows(x0 = c(2,1), y0 = GramRatio.table$mean, y1 = GramRatio.table$LCI, angle = 90,
+arrows(x0 = c(2,1), y0 = ActRatio.table$mean, y1 = ActRatio.table$LCI, angle = 90,
        length = 0.25, lwd = 2)
-arrows(x0 = c(2,1), y0 = GramRatio.table$mean, y1 = GramRatio.table$UCI, angle = 90,
+arrows(x0 = c(2,1), y0 = ActRatio.table$mean, y1 = ActRatio.table$UCI, angle = 90,
        length=0.25, lwd = 2)
 
 # Close Plot Device
@@ -1506,8 +1607,10 @@ grid.raster(img)
 
 
 # Statistics
-Gram.Ratio.ttest <- t.test(Con.Gram.Ratio, Rpf.Gram.Ratio, alternative="greater")
-Gram.Ratio.ttest  # Non-significant: t = 1.3691, df = 13.303, p = 0.09682
+Act.Ratio.ttest <- t.test(Con.Act.Ratio, Rpf.Act.Ratio, alternative="greater")
+Act.Ratio.ttest  # Non-significant: t = 1.3691, df = 13.303, p = 0.09682
+
+
 ```
 
 
@@ -1546,7 +1649,7 @@ arabid.fig <- plot(jitter(rep(1, length(seedling.con$RelativeBiomass)), amount =
       las = 1, ylab = "", xlab = "")
       box(lwd = 2)
 points(jitter(rep(2, length(seedling.rpf$RelativeBiomass)), amount = 0.1), seedling.rpf$RelativeBiomass, pch = 21, 
-       bg = "gray15", col = "gray15", lwd = 2, cex = 1.7)
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
 
 # Adding mean data point for each treatment # 
 points(1, mean(seedling.con$RelativeBiomass), pch = 21, col = "black", 
@@ -1569,7 +1672,7 @@ axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
      at=c(0.0, 0.5, 1.0), labels = F, tck = -0.02)
 
 axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
-     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
 
 axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
      at = c(1, 2), labels = F, tck = -0.02)
@@ -1590,6 +1693,11 @@ grid.raster(img)
 
 
 # Statistical test: t-test of Rpf effects on Arabdiopsis plant biomass
+Arabid.rpf <- seedling[ which(seedling$Treatment == "Rpf+"), ] 
+Arabid.con <- seedling[ which(seedling$Treatment == "Rpf-"), ] 
+Arabid.ttest <- t.test(Arabid.rpf$RelativeBiomass, Arabid.con$RelativeBiomass)
+Arabid.ttest 
+
 anova <- aov(seedling$RelativeBiomass ~ seedling$Treatment, data = seedling)
 summary(anova) 
 TukeyHSD(anova)  # Non-significant: p = 0.321 
