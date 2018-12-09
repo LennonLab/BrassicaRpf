@@ -226,7 +226,7 @@ arrows(x0 = c(2,1), y0 = flower.table$mean, y1 = flower.table$UCI, angle = 90,
 text(0.65,14.5 ,labels="C", col="black", cex=2)
 
 # p-value label 
-mtext(text = expression(italic("P")~" = .097") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("P")~" = 0.097") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 
 # Close Plot Device
 dev.off()
