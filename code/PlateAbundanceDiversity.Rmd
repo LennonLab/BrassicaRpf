@@ -16,8 +16,7 @@ output: pdf_document
 # Set working directory #
 rm(list = ls())
 getwd()
-setwd("~/../GitHub/DormancyGPCA/data/") # Venus Computer
-#setwd("~/GitHub/") # For all other computers
+knitr::opts_knit$set(root.dir = "~/../Github/BrassicaRpf/data")
 
 # Require or install packages #
 package.list <- c('vegan', 'ggplot2', 'gplots', 'plyr', 'psych', 'corrplot', 'BiodiversityR', 'RColorBrewer') 
@@ -40,9 +39,6 @@ Data set modification:
 4. I log2 transformed the concentration gradient of Rpf treatment due to uneven concentration treatments. 
 
 ```{r}
-# Set working directory # 
-setwd("~/../GitHub/DormancyGPCA/data/") # Venus Computer
-
 # Load plateCfuMorphotypeData.txt dataset #
 cfu <- read.csv("plateCfuMorphotypeData.txt",  header=T)
 
@@ -76,10 +72,10 @@ cfu$rpf <- log2(rpf.conc + 1) # I added +1 to make natural log of 0 as 1
 myColors <- brewer.pal(3,"Set1")  
 
 # Assign the three soil samples (Peru, Dunn, Indiana Preserves) to each color # 
-names(myColors) <- levels(cfu$Sample)
+names(myColors) <- levels(cfu$Location)
 
 # Assign soil sample color to colScale # 
-colScale <- scale_colour_manual(name = "Sample", values = myColors)
+colScale <- scale_colour_manual(name = "Location", values = myColors)
 ```
 
 
@@ -87,19 +83,20 @@ colScale <- scale_colour_manual(name = "Sample", values = myColors)
 
 ```{r}
 # Calculate the average and standard error of means of log transformed standardized CFU  # 
-cfu.mean <- ddply(cfu, c("rpf", "Sample"), summarise, 
+cfu.mean <- ddply(cfu, c("rpf", "Location"), summarise, 
                    mean=mean(stdcfu.log), sem=sd(stdcfu.log)/sqrt(length(stdcfu.log)))
 cfu.mean <- transform(cfu.mean, lower=mean-sem, upper=mean+sem) 
 
 # Line graph # 
-cfu.line <- ggplot(data=cfu.mean, aes(x=rpf, y=mean, colour=Sample)) + 
+cfu.line <- ggplot(data=cfu.mean, aes(x=rpf, y=mean, colour=Location)) + 
   geom_line()
 
 # Edit line graph figure # 
-cfu.plot <- cfu.line +  
+cfu.plot <- cfu.line + scale_y_continuous(limits = c(8.0, 9.5), breaks = seq(8.0, 9.5, 0.5), 
+                     sec.axis = sec_axis(~ . * 1, labels = c(" "," "," ", " "))) +
     geom_line(size=1.25) +
-  labs(x=expression(paste("Rpf concentrations, Log2(",mu,"mol/L))")), 
-       y="Log10(CFU/Soil (g))") + 
+  labs(x="Rpf concentration,"~Log["2"](paste(mu)~mol/L),
+       y=Log["10"]~(CFU~g^-1~ soil)) +
   geom_errorbar(aes(ymax=upper, ymin=lower), data=cfu.mean, width = 0.2, size = 0.5) +
   theme_classic() +
   theme(axis.text.y=element_text(colour="black", size=20, margin =margin(0,15,0,0)),
@@ -107,8 +104,8 @@ cfu.plot <- cfu.line +
         axis.title.y = element_text(colour="black", size=20,  margin = margin(0,20,0,10)),
         axis.title.x = element_text(colour="black", size=20,  margin=margin(20,0,0,0)),
         panel.border = element_rect(linetype = "solid", colour = "black", size=3, fill=NA),
-        axis.ticks.length = unit(-0.35, "cm"),
-        axis.ticks = element_line(size = 1.65, colour="black"),
+          axis.ticks = element_line(size = 1.5),
+          axis.ticks.length = unit(.25, "cm"),
         legend.title = element_text(size=15),
         legend.text=element_text(size=15)) +
   scale_x_continuous(breaks = round(seq(0, 6, by = 1),1)) + 

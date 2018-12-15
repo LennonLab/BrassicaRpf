@@ -140,7 +140,8 @@ text(0.65,1.45 ,labels="A", col="black", cex=2)
 
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.017") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
-
+# Sample number label
+mtext(text = expression(italic("N")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Plotting second panel for root biomass # 
 root.fig <- plot(jitter(rep(1, length(root.con$value)), amount = 0.1), root.con$value, 
@@ -184,7 +185,8 @@ text(0.65,1.45 ,labels="B", col="black", cex=2)
 
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.049") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
-
+# Sample number label
+mtext(text = expression(italic("N")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Plotting third panel for flower count # 
 flowercount.fig <- plot(jitter(rep(1, length(flower.con$flower.count)), amount = 0.1), flower.con$flower.count, 
@@ -227,6 +229,9 @@ text(0.65,14.5 ,labels="C", col="black", cex=2)
 
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.097") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
+# Sample number label
+mtext(text = expression(italic("N")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+
 
 # Close Plot Device
 dev.off()
@@ -325,7 +330,9 @@ co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250),
           legend.position="none") +
     scale_color_manual(values=c('gray15','gray15')) + 
   annotate("text", x = 2.5, y = 750, label = "-Rpf", cex=7) + 
-  annotate("text", x = 4.5, y = 250, label = "+Rpf", cex=7)
+  annotate("text", x = 4.5, y = 250, label = "+Rpf", cex=7) +
+  annotate("text", x = 0.9, y = 975, label = "Rpf: P = 0.002", cex=7) + 
+  annotate("text", x = 0.925, y = 900, label = "N = 8", cex=7)
 
 ggsave("../figures/Figure2-Soilrespiration.png", width = 20, height = 15, units = "cm")
 
@@ -467,6 +474,8 @@ text(0.7,2.3E6 ,labels="A", col="black", cex=2)
 
 # P-value label
 mtext(text = expression(italic("P")~" = 0.016") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
+# Sample number label
+mtext(text = expression(italic("N")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 2: Rpf effects on fungal abundance # 
 abun.fun.fig <- plot(jitter(rep(1, length(fun.con$value)), amount = 0.1), fun.con$value, 
@@ -514,6 +523,8 @@ text(0.7,1.45E6 ,labels="B", col="black", cex=2)
 
 # p-value 
 mtext(text = expression(italic("P")~" = 0.007") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
+# Sample number label
+mtext(text = expression(italic("N")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 3: Rpf effects on fungal abundance # 
 FB.fig <- plot(jitter(rep(1, length(FB.con$FB)), amount = 0.1), FB.con$FB, 
@@ -561,6 +572,8 @@ text(0.7,1.45,labels="C", col="black", cex=2)
 
 # p-value 
 mtext(text = expression(italic("P")~" = 0.018") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
+# Sample number label
+mtext(text = expression(italic("N")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Close Plot Device
 dev.off()
@@ -860,6 +873,9 @@ legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
+# Sample number label
+mtext(text = expression(italic("N")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
+
 # Close Plot Device
 dev.off()
 graphics.off()
@@ -882,7 +898,7 @@ all.bray.permanova
 # Indentify indicator species 
 spe.corr <- add.spec.scores(Brassica.PCoA, OTU.REL.log, 
                             method = "cor.scores")$cproj
-corrcut <- 0.94 # User defined cutoff
+corrcut <- 0.7 # User defined cutoff
 imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
 imp.spp
 imp.otu <- as.vector(rownames(imp.spp))
@@ -1089,6 +1105,9 @@ legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
+# Sample number label
+mtext(text = expression(italic("N")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
+
 # Close Plot Device
 dev.off()
 graphics.off()
@@ -1201,7 +1220,6 @@ summary(trans.aov)
 
 gDNA.aov <- aov(rich.mean ~ treatment, gDNA)
 summary(gDNA.aov)
-
 
 
 # Soil bacterial evenness 
@@ -1335,6 +1353,9 @@ legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
+# Sample number label
+mtext(text = expression(italic("N")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
+
 # Close Plot Device
 dev.off()
 graphics.off()
@@ -1343,14 +1364,15 @@ graphics.off()
 img <- readPNG("../figures/Figure5-ActinoOrdination.png")
 grid.raster(img)
 
+
 # Adding pot number factor 
 Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
 Brassica.div$pot <- as.factor(Brassica.div$pot)
 
 ## Statistical test: PERMANOVA to test Rpf and metabolic status effects on Actinobacteria composition
-act.bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment + Brassica.div$pot + 
-                           Brassica.div$type*Brassica.div$treatment,
-                         method = "bray", binary = FALSE, permutations = 999)
+act.bray.permanova <- adonis(Actino.OTU.REL ~ Brassica.div$type + Brassica.div$treatment +
+                               Brassica.div$pot + Brassica.div$type*Brassica.div$treatment, method
+                             = "bray", binary = FALSE, permutations = 999)
 act.bray.permanova   
 
 # Indentify indicator species 
@@ -1358,6 +1380,7 @@ spe.corr <- add.spec.scores(Brassica.PCoA, Actino.OTU.REL.log,
                             method = "cor.scores")$cproj
 corrcut <- 0.7 # User defined cutoff
 imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+imp.spp <- as.matrix(imp.spp)
 imp.spp
 imp.otu <- as.vector(rownames(imp.spp))
 imp.otu
@@ -1366,31 +1389,6 @@ imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu), ]
 imp.spp.lst
 
 fit <- envfit(Brassica.PCoA, Actino.OTU.REL.log, perm = 999)
-
-
-# Relative abundance of the indicator species with Rpf treatment
-# Subset Class Thermoleophilia
-Thermo.tax <- OTU.tax[ which(OTU.tax$Class == 'Thermoleophilia'), ]
-
-# Subset Actino.OTU.REL.Log to contain only Thermoleophilia
-Thermo.OTU <- match(Thermo.tax$OTU, colnames(Actino.OTU.REL.log))
-Thermo.OTU <- sort(c(Thermo.OTU-1, Thermo.OTU))
-Thermo.OTU <- Actino.OTU.REL.log[, Thermo.OTU]
-
-# Subset between Rpf treatments and calculate means of sum counts
-# +Rpf 
-Thermo.Rpf <- Thermo.OTU[c(5:10, 15:20), ]
-Thermo.Rpf.count <- as.vector(rowSums(Thermo.Rpf))
-mean(Thermo.Rpf.count)
-# -Rpf 
-Thermo.Con <- Thermo.OTU[c(1:5, 10:15), ]
-Thermo.Con.count <- as.vector(rowSums(Thermo.Con))
-mean(Thermo.Con.count)
-
-
-# T-test for effect of RPf 
-Gram.Ratio.ttest <- t.test(Thermo.Con.count, Thermo.Rpf.count)
-Gram.Ratio.ttest
 ```
 
 
@@ -1682,6 +1680,11 @@ arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$LCI, angle = 9
        length = 0.25, lwd = 2)
 arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$UCI, angle = 90,
        length=0.25, lwd = 2)
+
+# p-value 
+mtext(text = expression(italic("P")~" = 0.320") , side =3, line = -1.2, adj = 0.925, col="black", cex=1.25)
+# Sample number label
+mtext(text = expression(italic("N")~" = 4"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
 
 # Close Plot Device
 dev.off()
