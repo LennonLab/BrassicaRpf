@@ -141,7 +141,7 @@ text(0.65,1.45 ,labels="A", col="black", cex=2)
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.017") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("N")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Plotting second panel for root biomass # 
 root.fig <- plot(jitter(rep(1, length(root.con$value)), amount = 0.1), root.con$value, 
@@ -186,7 +186,7 @@ text(0.65,1.45 ,labels="B", col="black", cex=2)
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.049") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("N")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Plotting third panel for flower count # 
 flowercount.fig <- plot(jitter(rep(1, length(flower.con$flower.count)), amount = 0.1), flower.con$flower.count, 
@@ -230,7 +230,7 @@ text(0.65,14.5 ,labels="C", col="black", cex=2)
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.097") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("N")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 
 # Close Plot Device
@@ -332,7 +332,7 @@ co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250),
   annotate("text", x = 2.5, y = 750, label = "-Rpf", cex=7) + 
   annotate("text", x = 4.5, y = 250, label = "+Rpf", cex=7) +
   annotate("text", x = 0.9, y = 975, label = "Rpf: P = 0.002", cex=7) + 
-  annotate("text", x = 0.925, y = 900, label = "N = 8", cex=7)
+  annotate("text", x = 0.925, y = 900, label = "n = 8", cex=7)
 
 ggsave("../figures/Figure2-Soilrespiration.png", width = 20, height = 15, units = "cm")
 
@@ -475,7 +475,7 @@ text(0.7,2.3E6 ,labels="A", col="black", cex=2)
 # P-value label
 mtext(text = expression(italic("P")~" = 0.016") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("N")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 2: Rpf effects on fungal abundance # 
 abun.fun.fig <- plot(jitter(rep(1, length(fun.con$value)), amount = 0.1), fun.con$value, 
@@ -524,7 +524,7 @@ text(0.7,1.45E6 ,labels="B", col="black", cex=2)
 # p-value 
 mtext(text = expression(italic("P")~" = 0.007") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("N")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 3: Rpf effects on fungal abundance # 
 FB.fig <- plot(jitter(rep(1, length(FB.con$FB)), amount = 0.1), FB.con$FB, 
@@ -573,7 +573,7 @@ text(0.7,1.45,labels="C", col="black", cex=2)
 # p-value 
 mtext(text = expression(italic("P")~" = 0.018") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("N")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Close Plot Device
 dev.off()
@@ -874,7 +874,7 @@ legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
 # Sample number label
-mtext(text = expression(italic("N")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
+mtext(text = expression(italic("n")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
 
 # Close Plot Device
 dev.off()
@@ -896,16 +896,16 @@ all.bray.permanova <- adonis(OTU.REL.log ~ type + treatment + pot +
 all.bray.permanova  
 
 # Indentify indicator species 
-spe.corr <- add.spec.scores(Brassica.PCoA, OTU.REL.log, 
-                            method = "cor.scores")$cproj
-corrcut <- 0.7 # User defined cutoff
-imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
-imp.spp
-imp.otu <- as.vector(rownames(imp.spp))
-imp.otu
+#spe.corr <- add.spec.scores(Brassica.PCoA, OTU.REL.log, 
+#                            method = "cor.scores")$cproj
+#corrcut <- 0.7 # User defined cutoff
+#imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+#imp.spp
+#imp.otu <- as.vector(rownames(imp.spp))
+#imp.otu
 
-imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu | OTU.tax$OTU == "Otu00014" | OTU.tax$OTU == "Otu01640" |OTU.tax$OTU == "Otu02609" ), ]
-imp.spp.lst
+#imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu | OTU.tax$OTU == "Otu00014" | OTU.tax$OTU == "Otu01640" |OTU.tax$OTU == "Otu02609" ), ]
+#imp.spp.lst
 
 ```
 
@@ -1106,7 +1106,7 @@ legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
 # Sample number label
-mtext(text = expression(italic("N")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
+mtext(text = expression(italic("n")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
 
 # Close Plot Device
 dev.off()
@@ -1127,16 +1127,16 @@ gpos.bray.permanova <- adonis(Gpos.OTU.REL ~ type + treatment + pot +
 gpos.bray.permanova    
 
 # Indentify indicator species 
-spe.corr <- add.spec.scores(Brassica.PCoA, Gpos.OTU.REL, 
-                            method = "cor.scores")$cproj
-corrcut <- 0.94 # User defined cutoff
-imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
-imp.spp
-imp.otu <- as.vector(rownames(imp.spp))
-imp.otu
+#spe.corr <- add.spec.scores(Brassica.PCoA, Gpos.OTU.REL, 
+#                            method = "cor.scores")$cproj
+#corrcut <- 0.94 # User defined cutoff
+#imp.spp <- spe.corr[abs(spe.corr[, 1]) >= corrcut | abs(spe.corr[, 2]) >= corrcut, ]
+#imp.spp
+#imp.otu <- as.vector(rownames(imp.spp))
+#imp.otu
 
-imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu), ]
-imp.spp.lst
+#imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu), ]
+#imp.spp.lst
 ```
 
 
@@ -1354,7 +1354,7 @@ legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
 # Sample number label
-mtext(text = expression(italic("N")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
+mtext(text = expression(italic("n")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
 
 # Close Plot Device
 dev.off()
@@ -1595,6 +1595,11 @@ arrows(x0 = c(2,1), y0 = ActRatio.table$mean, y1 = ActRatio.table$LCI, angle = 9
 arrows(x0 = c(2,1), y0 = ActRatio.table$mean, y1 = ActRatio.table$UCI, angle = 90,
        length=0.25, lwd = 2)
 
+# p-value 
+mtext(text = expression(italic("P")~" = 0.097") , side =3, line = -1.2, adj = 0.925, col="black", cex=1.25)
+# Sample number label
+mtext(text = expression(italic("n")~" = 10"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
+
 # Close Plot Device
 dev.off()
 graphics.off()
@@ -1607,8 +1612,6 @@ grid.raster(img)
 # Statistics
 Act.Ratio.ttest <- t.test(Con.Act.Ratio, Rpf.Act.Ratio, alternative="greater")
 Act.Ratio.ttest  # Non-significant: t = 1.3691, df = 13.303, p = 0.09682
-
-
 ```
 
 
@@ -1684,7 +1687,7 @@ arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$UCI, angle = 9
 # p-value 
 mtext(text = expression(italic("P")~" = 0.320") , side =3, line = -1.2, adj = 0.925, col="black", cex=1.25)
 # Sample number label
-mtext(text = expression(italic("N")~" = 4"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
+mtext(text = expression(italic("n")~" = 4"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
 
 # Close Plot Device
 dev.off()
