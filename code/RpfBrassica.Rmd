@@ -1,6 +1,6 @@
 ---
-title: "Resuscitation of the microbial seed bank alters plant-soil interactions"
-authors: "Venus Kuo and Jay T. Lennon"
+title: "Resuscitation of microbial seed banks"
+author: "Venus Kuo and Jay T. Lennon"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
   - \usepackage{array}
