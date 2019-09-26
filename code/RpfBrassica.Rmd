@@ -1,39 +1,41 @@
 ---
-title: "Resuscitating the microbial seed bank alters plant-soil interactions"
-author: "Venus Kuo"
-date: "June 25, 2018"
-output: html_document
+title: "Resuscitation of the microbial seed bank alters plant-soil interactions"
+authors: "Venus Kuo and Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
 ---
 
-Questions: 
-
-1) Does resuscitating the soil microbial seed bank with Rpf alter plant biomass and reproductive output?
-2) How does Rpf alter the soil microbial abundance, activity, and community structure?
-
-Data Analysis:
-
-1a) Performed t-test to test Rpf effects on plant traits (i.e., seed number, biomass, SLA, height).
-2a) Performed repeated-measures ANOVA (RM-ANOVA) to test Rpf effects on soil respiration.
-2b) Performed t-test to test Rpf effects on soil microbial abundance (i.e., bacterial and fungal).
-2c) Generated a PCoA and performed PERMANOVA to test Rpf and metabolic status effects on soil bacterial community composition. 
+# Objective
+Analysis of plant and microbial data from soils exposed to recombinantly produced resuscitation promoting factor (Rpf)
 
 # Set working environment and load packages 
 
 ```{r setup, message = FALSE, warning = FALSE}
 # Clear and set working directory 
 rm(list = ls())
-knitr::opts_knit$set(root.dir = "~/../Github/BrassicaRpf/data")
+setwd("~/GitHub/BrassicaRpf/data")
 
 # Require and/or install packages 
-package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'pander', 'reshape', 'grid', 'png', 'car', 'bbmle', 'reshape2', 'ggplot2') 
+package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'pander', 'reshape', 'grid', 'png', 'car', 'bbmle', 'reshape2', 'ggplot2', 'picante', 'ade4', 'phangorn', 'indicspecies', 'BiodiversityR') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
     library(package, character.only=T)
   } }
 
-# Load small sem calculation function 
+# Load sem function
 sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+
+# Load t-test custom functions # 
+ttest <- function(reg, coefnum, val){
+  co <- coef(summary(reg))
+  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
+  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
+  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
+}
 ```
 
 
@@ -41,7 +43,7 @@ sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
 
 ```{r}
 # Load plant trait data 
-plant.data <- read.delim("plantTrait.txt", sep = ",", header = TRUE)
+plant.data <- read.delim("~/GitHub/BrassicaRpf/data/plantTrait.txt", sep = ",", header = TRUE)
 # Remove soil sterilization treatment from dataset # 
 plant.data <- subset(plant.data, soil == "Live") 
 
@@ -94,7 +96,7 @@ flower.table <- flower.table[order(flower.table$mean),]
 
 
 # Generating 3 panel figure showing Rpf effects on plant traits # 
-png(filename="../figures/Figure1-PlantTraits.png",
+png(filename="../figures/Figure2-PlantTraits.png",
     width = 1200, height = 800, res = 96*2)
 par(oma=c(7,3,7,1), mar=c(2,3,3,3.5), mfrow=c(1,3))
 
@@ -141,7 +143,7 @@ text(0.65,1.45 ,labels="A", col="black", cex=2)
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.017") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+#mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Plotting second panel for root biomass # 
 root.fig <- plot(jitter(rep(1, length(root.con$value)), amount = 0.1), root.con$value, 
@@ -186,7 +188,7 @@ text(0.65,1.45 ,labels="B", col="black", cex=2)
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.049") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+#mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Plotting third panel for flower count # 
 flowercount.fig <- plot(jitter(rep(1, length(flower.con$flower.count)), amount = 0.1), flower.con$flower.count, 
@@ -230,7 +232,7 @@ text(0.65,14.5 ,labels="C", col="black", cex=2)
 # p-value label 
 mtext(text = expression(italic("P")~" = 0.097") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+#mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 
 # Close Plot Device
@@ -238,7 +240,7 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/Figure1-PlantTraits.png")
+img <- readPNG("../figures/Figure2-PlantTraits.png")
 grid.raster(img)
 
 
@@ -281,7 +283,7 @@ height.ttest  # Non-significant: t = 1.1102, df = 13.384, p = 0.2865
 
 ```{r}
 # Load soil respirtation data #
-CO2 <- read.csv("GCH_CO2.txt", sep = ",", header = TRUE)
+CO2 <- read.csv("~/GitHub/BrassicaRpf/data/GCH_CO2.txt", sep = ",", header = TRUE)
 
 # Subsetting relevant data from CO2 dataset # 
 CO2.sub <- subset(CO2, plant=="present" & hour =="24" & soil=="live", select=c(Treatment, soil, Week.1, Week.2, Week.3, Week.4, Week.5, Week.6)) 
@@ -315,7 +317,7 @@ co <- ggplot(CO2.means.sem, aes(x=Week, y=mean, colour=Treatment, group=Treatmen
       geom_point(aes(shape=Treatment), position=pd, size=4) +
       scale_shape_manual(values=c(16, 16)) +
       xlab("Time (weeks)") +
-      ylab(expression(Soil~respiration~(ppm~CO[2]~d^-1~g^-1~soil))) 
+      ylab(expression(~Respiration~(ppm~CO[2]~d^-1~g^-1~soil))) 
 
 co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250), 
                      sec.axis = sec_axis(~ . * 1, labels = c(" "," "," ", " ", " "))) +
@@ -324,17 +326,20 @@ co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250),
           axis.text.x=element_text(colour = "black", size = 20),
           axis.ticks = element_line(size = 1.25),
           axis.ticks.length = unit(.25, "cm"),
-          axis.title.y = element_text(size = 15, colour = "black", margin = margin(0,10,0,0)),
+          axis.title.y = element_text(size = 18, colour = "black", margin = margin(0,10,0,0)),
           axis.title.x = element_text(size = 18, colour = "black", margin = margin(15,10,0,10)),
           panel.border = element_rect(linetype = "solid", colour = "black", size = 2, fill = NA),
           legend.position="none") +
     scale_color_manual(values=c('gray15','gray15')) + 
   annotate("text", x = 2.5, y = 750, label = "-Rpf", cex=7) + 
   annotate("text", x = 4.5, y = 250, label = "+Rpf", cex=7) +
-  annotate("text", x = 0.9, y = 975, label = "Rpf: P = 0.002", cex=7) + 
-  annotate("text", x = 0.925, y = 900, label = "n = 8", cex=7)
+  #annotate("text", x = 1.5, y = 975, label = "Rpf: P = 0.002", cex=7) + 
+  annotate("text", x = 1.5, y = 975, label = "Rpf: italic(P)==0.002", parse = TRUE, cex=7) +
+  #annotate("text", x = 0.925, y = 900, label = "n = 8", cex=7)
 
-ggsave("../figures/Figure2-Soilrespiration.png", width = 20, height = 15, units = "cm")
+
+  
+ggsave("../figures/Figure3-Soilrespiration.png", width = 20, height = 15, units = "cm")
 
 
 # Statistical tests: Rpf effects on soil CO2 respiration
@@ -355,7 +360,7 @@ pander(anova(CO2.rm))
 
 ```{r}
 # Load microbial qPCR abundance data # 
-abundance <- read.csv("qPCR.txt", sep = ",", header = TRUE) 
+abundance <- read.csv("~/GitHub/BrassicaRpf/data/qPCR.txt", sep = ",", header = TRUE) 
 # remove week 1 data # 
 abundance <- subset(abundance, Week == "6")
 # Reset data frame index # 
@@ -424,7 +429,7 @@ FB.table <- FB.table[order(FB.table$mean),]
 
 # Generating 3 panel figure for Rpf effects on soil microbial abundance 
 # Plotting microbial abundance and ratio figure # 
-png(filename="../figures/Figure3-MicrobialAbundanceRatio.png",
+png(filename="../figures/Figure4-MicrobialAbundanceRatio.png",
     width = 1200, height = 800, res = 96*2)
 par(oma=c(7,3,7,1), mar=c(2,3,3,4), mfrow=c(1,3))
 
@@ -475,7 +480,7 @@ text(0.7,2.3E6 ,labels="A", col="black", cex=2)
 # P-value label
 mtext(text = expression(italic("P")~" = 0.016") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+#mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 2: Rpf effects on fungal abundance # 
 abun.fun.fig <- plot(jitter(rep(1, length(fun.con$value)), amount = 0.1), fun.con$value, 
@@ -524,7 +529,7 @@ text(0.7,1.45E6 ,labels="B", col="black", cex=2)
 # p-value 
 mtext(text = expression(italic("P")~" = 0.007") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+#mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Panel 3: Rpf effects on fungal abundance # 
 FB.fig <- plot(jitter(rep(1, length(FB.con$FB)), amount = 0.1), FB.con$FB, 
@@ -544,7 +549,7 @@ points(2, mean(FB.rpf$FB), pch = 21, col = "black",
 box(lwd = 2)
 
 # Y axis labels
-mtext(expression('Fungi : bacteria ratio'), side = 2,
+mtext(expression('Fungal : bacterial ratio'), side = 2,
       outer = FALSE, cex = 1, line = 2.5, adj = 0.5)
 
 # Major Axes
@@ -573,14 +578,14 @@ text(0.7,1.45,labels="C", col="black", cex=2)
 # p-value 
 mtext(text = expression(italic("P")~" = 0.018") , side =3, line = -1.2, adj = 0.925, col="black", cex=0.8)
 # Sample number label
-mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+#mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
 
 # Close Plot Device
 dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/Figure3-MicrobialAbundanceRatio.png")
+img <- readPNG("../figures/Figure4-MicrobialAbundanceRatio.png")
 grid.raster(img)
 
 
@@ -604,55 +609,32 @@ FB.ttest     # Significant: t= -2.8454, df = 9.4476, p = 0.01835
 ## Set up work environment and load packages 
 
 ```{r, message=FALSE, warning=FALSE}
-# Setup work enviroment 
-rm(list = ls())
-knitr::opts_knit$set(root.dir = "~/../Github/BrassicaRpf/analysis")
 
-# Source diversity code functions from bin folder # 
-source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/DiversityFunctions.R")
-source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/MothurTools.R")
-source("C:/Users/vkuo/GitHub/BrassicaRpf/bin/phylodiversity2.R")
+source("~/GitHub/BrassicaRpf/bin/DiversityFunctions.R")
+source("~/GitHub/BrassicaRpf/bin/MothurTools.R")
+source("~/GitHub/BrassicaRpf/bin/phylodiversity2.R")
 
-# Load packages # 
-package.list <- c('vegan', 'plyr', 'grid', 'png', 'picante', 'ade4',  'phangorn', 'indicspecies', 'BiodiversityR') 
-for (package in package.list) {
-  if (!require(package, character.only=T, quietly=T)) { 
-    install.packages(package)
-    library(package, character.only=T)
-  } }
-
-# Load sem custom functions # 
-sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
-
-# Load t-test custom functions # 
-ttest <- function(reg, coefnum, val){
-  co <- coef(summary(reg))
-  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
-  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
-  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
-}
-
-# Run all alpha diversity analyses
+# Run All: Select if all section are to be re-run
 run.all <- TRUE
 
 # Load files
   # design = general design file for experiment
   # shared = OTU table from mothur with sequence similarity clustering
   # tax    = Taxonomy for 97% similarity OTUs
-design <- "C:/Users/vkuo/GitHub/BrassicaRpf/data/Brassica.design.txt"
-shared <- "C:/Users/vkuo/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.shared"
-taxon <- "C:/Users/vkuo/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.0.03.taxonomy"
+
+design <- "~/GitHub/BrassicaRpf/data/Brassica.design.txt"
+shared <- "~/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.shared"
+tax <- "~/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.0.03.taxonomy"
 
 # Import Design 
 design <- read.delim(design, header=T, row.names=1)
 # Import Shared Files
 OTU <- read.otu(shared = shared, cutoff = "0.03") # 97% similarity 
 # Import Taxonomy
-OTU.tax <- read.tax(taxonomy = taxon, format = "rdp")  
+OTU.tax <- read.tax(taxonomy = tax, format = "rdp")  
 # Import Phylogenetic tree 
 OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.2") 
 ```
-
 
 ## Soil bacteria beta and alpha diversity 
 
@@ -679,7 +661,6 @@ goods.c <- function(x = ""){
 goods.c.Brassica <- goods.c(OTU)
 mean.good.c <- mean(goods.c.Brassica) # 0.984  Good mean coverage
 min.good.c <- min(goods.c.Brassica) # 0.967  Good lowest coverage
-
 
 ### Alpha diversity 
 # Resampling code to estimate alpha diversity (used if run.all = T)
@@ -796,8 +777,8 @@ for(i in 1:length(treatment.div)){
 
 mean(treatment.dis)
 
-# Plot figure # 
-png(filename="../figures/SupplementaryFigure-AllBacteriaOrdination.png",
+# Plot figure -- Supplement for all bacteria ordination
+png(filename="../figures/Suppl.Fig4.Bacteria.png",
     width = 1800, height = 800, res = 96*2)
 
 layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
@@ -850,7 +831,7 @@ points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 24,
 points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 24,
        cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)
 
-# Add elipcses 
+# Add ellipses 
 # Active Rpf+
 ordiellipse(cbind(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2]), Brassica.active.rpf$treatment, kind="sd", conf=0.95,
             lwd=2, lty=3, draw="lines", col="black", label=FALSE)
@@ -881,7 +862,7 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/SupplementaryFigure-AllBacteriaOrdination.png")
+img <- readPNG("../figures/Suppl.Fig4.Bacteria.png")
 grid.raster(img)
 
 # Statistical test 
@@ -1027,8 +1008,8 @@ for(i in 1:length(treatment.div)){
 mean(treatment.dis)
 
 
-# Plot figure # 
-png(filename="../figures/Figure5-GramPositiveOrdination.png",
+# Plot figure # Gram positive ordination
+png(filename="../figures/Suppl.Fig3.GramPositive.png",
     width = 1800, height = 800, res = 96*2)
 
 layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
@@ -1113,7 +1094,7 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/Figure5-GramPositiveOrdination.png")
+img <- readPNG("../figures/Suppl.Fig3.GramPositive.png")
 grid.raster(img)
 
 # Factoring pot number for match/pair design
@@ -1354,7 +1335,7 @@ legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
        bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
 
 # Sample number label
-mtext(text = expression(italic("n")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
+# mtext(text = expression(italic("n")~" = 5"), line = 1, adj = -0.65, col="black", cex=1.5)
 
 # Close Plot Device
 dev.off()
@@ -1385,15 +1366,22 @@ imp.spp
 imp.otu <- as.vector(rownames(imp.spp))
 imp.otu
 
-imp.spp.lst <- OTU.tax[ which(OTU.tax$OTU == imp.otu), ]
-imp.spp.lst
+imp.spp.lst.1 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[1:48]), ]
+imp.spp.lst.2 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[48:57]), ]
+imp.spp.lst.3 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[57:68]), ]
+imp.spp.lst.4 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[69:77]), ]
+imp.spp.lst.5 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[78:89]), ]
+imp.spp.lst.6 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[90:99]), ]
+imp.spp.lst.7 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[100:109]), ]
+imp.spp.lst.8 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[110:119]), ]
+imp.spp.lst.8 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[120:125]), ]
+imp.spp.lst.9 <- OTU.tax[ which(OTU.tax$OTU == imp.otu[126]), ]
+
+imp.spp.lst <- rbind(imp.spp.lst.1, imp.spp.lst.2, imp.spp.lst.3, imp.spp.lst.4, imp.spp.lst.5,
+                     imp.spp.lst.6, imp.spp.lst.7, imp.spp.lst.8, imp.spp.lst.9)
 
 fit <- envfit(Brassica.PCoA, Actino.OTU.REL.log, perm = 999)
 ```
-
-
-
-
 
 
 # 6) Supplementary materials
@@ -1408,7 +1396,7 @@ Gpos.OTU.Rpf <- Gpos.OTU[c(6:10, 16:20), ]
 OTU.Con <- OTU[c(1:5, 11:15), ]
 Gpos.OTU.Con <- Gpos.OTU[c(1:5, 11:15), ]
   
-# Calculate sum reads for gram positive 
+# Calculate sum reads for Gram positive 
 Gram.pos.Rpf <- as.vector(rowSums(Gpos.OTU.Rpf))      
 All.Rpf <- as.vector(rowSums(OTU.Rpf))  
 Gram.pos.Con <- as.vector(rowSums(Gpos.OTU.Con))       
@@ -1442,7 +1430,7 @@ GramRatio.table <- GramRatio.table[order(GramRatio.table$mean),]
 
 
 # Plotting Gram Ratio # 
-png(filename="../figures/SupplementaryFig2-GramRatio.png",
+png(filename="../figures/Suppl.Fig2a.GramRatio.png",
     width = 800, height = 800, res = 96*2)
 par(mar = c(5, 5, 1, 1))
 
@@ -1463,7 +1451,7 @@ points(2, mean(Rpf.Gram.Ratio), pch = 21, col = "black",
 box(lwd = 2)
 
 # Y axis labels
-mtext(expression('Ratio'), side = 2,
+mtext(expression('Gram positive : Gram negative'), side = 2,
       outer = FALSE, cex = 1.5, line = 3.5, adj = 0.5)
 
 # Major Axes
@@ -1491,22 +1479,17 @@ dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/SupplementaryFig2-GramRatio.png")
+img <- readPNG("../figures/Suppl.Fig2a.GramRatio.png")
 grid.raster(img)
 
 
-# T-test for effect of RPf 
+# t-test for effect of RPf 
 Gram.Ratio.ttest <- t.test(Con.Gram.Ratio, Rpf.Gram.Ratio, alternative="greater")
 Gram.Ratio.ttest  # Non-significant: t = 1.2977, df = 15.203, p = 0.1069
 ```
 
 
-
-
-
-
-
-## Actinobacteria: Everything else ratios
+## Actinobacteria: proprotions
 
 ```{r}
 # Subsetting based on Rpf treatment
@@ -1550,8 +1533,8 @@ colnames(ActRatio.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
 ActRatio.table <- ActRatio.table[order(ActRatio.table$mean),]
 
 
-# Plotting Gram Ratio # 
-png(filename="../figures/SupplementaryFig3-ActinoToEverythingRatio.png",
+# Plotting Actino Ratio # 
+png(filename="../figures/Suppl.Fig2.ActinoProportion.png",
     width = 800, height = 800, res = 96*2)
 par(mar = c(5, 5, 1, 1))
 
@@ -1572,7 +1555,7 @@ points(2, mean(Rpf.Act.Ratio), pch = 21, col = "black",
 box(lwd = 2)
 
 # Y axis labels
-mtext(expression('Ratio'), side = 2,
+mtext(expression('Proportion Actinobacteria'), side = 2,
       outer = FALSE, cex = 1.5, line = 3.5, adj = 0.5)
 
 # Major Axes
@@ -1598,14 +1581,14 @@ arrows(x0 = c(2,1), y0 = ActRatio.table$mean, y1 = ActRatio.table$UCI, angle = 9
 # p-value 
 mtext(text = expression(italic("P")~" = 0.097") , side =3, line = -1.2, adj = 0.925, col="black", cex=1.25)
 # Sample number label
-mtext(text = expression(italic("n")~" = 10"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
+#mtext(text = expression(italic("n")~" = 10"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
 
 # Close Plot Device
 dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/SupplementaryFig3-ActinoToEverythingRatio.png")
+img <- readPNG("../figures/Suppl.Fig2.ActinoProportion.png")
 grid.raster(img)
 
 
@@ -1619,7 +1602,7 @@ Act.Ratio.ttest  # Non-significant: t = 1.3691, df = 13.303, p = 0.09682
 
 ```{r}
 # Load dataset 
-seedling <- read.delim("~/../Github/BrassicaRpf/data/seedlingbiomass.txt", sep = ",", head = TRUE)
+seedling <- read.delim("~/Github/BrassicaRpf/data/seedlingbiomass.txt", sep = ",", head = TRUE)
 
 # Calculate relative biomass # 
 seedling$Biomass <- (seedling$BiomassPixel)/(seedling$PlatePixel)
@@ -1640,7 +1623,7 @@ colnames(seedling.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
 seedling.table <- seedling.table[order(seedling.table$mean),]
 
 # Plotting Arabidopsis biomass # 
-png(filename="../figures/SupplementaryFig1-Arabidopsiscontrol.png",
+png(filename="../figures/Suppl.Fig5.Arabidopsis.png",
     width = 800, height = 800, res = 96*2)
 par(mar = c(5, 5, 1, 1))
 
@@ -1687,14 +1670,14 @@ arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$UCI, angle = 9
 # p-value 
 mtext(text = expression(italic("P")~" = 0.320") , side =3, line = -1.2, adj = 0.925, col="black", cex=1.25)
 # Sample number label
-mtext(text = expression(italic("n")~" = 4"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
+#mtext(text = expression(italic("n")~" = 4"), side = 3, line = -2.2, adj = 0.925, col="black", cex=1.25)
 
 # Close Plot Device
 dev.off()
 graphics.off()
 
 # Show Plot
-img <- readPNG("../figures/SupplementaryFig1-Arabidopsiscontrol.png")
+img <- readPNG("../figures/Suppl.Fig5.Arabidopsis.png")
 grid.raster(img)
 
 
