@@ -1,0 +1,133 @@
+---
+title: "Resuscitation of microbial seed banks"
+author: "Venus Kuo and Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+# Objective
+Evaluate how recombinant Rpf affects soil respirtion
+
+# Set working environment and load packages 
+
+```{r setup, message = FALSE, warning = FALSE}
+# Clear and set working directory 
+rm(list = ls())
+setwd("~/GitHub/BrassicaRpf/data")
+
+# Require and/or install packages 
+package.list <- c('vegan', 'plyr', 'grid', 'png', 'plyr', 'reshape2', 
+            'ggplot2', 'nlme', 'pander') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+# Load sem function
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+
+# Load t-test custom functions # 
+ttest <- function(reg, coefnum, val){
+  co <- coef(summary(reg))
+  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
+  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
+  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
+}
+```
+
+
+# Rpf effects on soil respiration 
+
+```{r}
+# Load soil respirtation data #
+CO2 <- read.csv("~/GitHub/BrassicaRpf/data/GCH_CO2.txt", sep = ",", header = TRUE)
+
+# Subset data  
+CO2.sub <- subset(CO2, plant =="present" & hour == "24" & soil == "live", 
+           select = c(Treatment, soil, Week.1, Week.2, Week.3, Week.4,
+           Week.5, Week.6)) 
+
+# Rename columns
+colnames(CO2.sub) <- c("Treatment", "soil", "1","2","3","4","5","6")
+
+# Melt dataset into three columns of treatment, soil, and weeks for anaylsis
+CO2.m <- melt(CO2.sub)
+
+# Change variable column name to week 
+colnames(CO2.m) <- c("Treatment", "soil", "Week", "value")
+
+# Set week as factor 
+CO2.m$Week <- as.factor(CO2.m$Week)
+
+# Standardizing the soil respiration values by 24 hours 
+CO2.m$StdCO2 <- (CO2.m$value)/24
+
+
+# Create summary table for respiration data 
+CO2.means.sem <- ddply(CO2.m, c("Treatment", "Week"), summarise,
+                   mean = mean(StdCO2), sem = sd(StdCO2)/sqrt(length(StdCO2)))
+CO2.means.sem <- transform(CO2.means.sem, lower = mean-sem, upper = mean+sem)
+
+# The errorbars overlapped, so use position_dodge to move them horizontally
+pd <- position_dodge(0)
+```
+
+# Statistical tests
+
+```{r}
+# RM-ANOVA 
+CO2.rm <- lme(StdCO2 ~ Week*Treatment, random = ~ 1 | soil,
+              correlation = corAR1(form = ~1 | soil), 
+              data = CO2.m)
+
+# Make ANOVA table
+set.caption("RMANOVA for soil CO2 respiration")
+pander(anova(CO2.rm)) 
+    # Significant effect of week: F5,84 = 21.6, p < 0.000
+    # Significant effect of Rpf: F1,84 = 9.676, p = 0.00255
+    # Non-significant interaction: F5,84 = 1.217, p = 0.3084
+```
+
+
+# Plot respiration data
+
+```{r}
+co <- ggplot(CO2.means.sem, aes(x = Week, y = mean, colour = Treatment, 
+        group=Treatment)) + geom_errorbar(aes(ymax = upper, ymin = lower), 
+        position = position_dodge(0.1), data = CO2.means.sem, width = 0.5, 
+        size = 1.1) + geom_line(aes(linetype=Treatment), position = pd, 
+        size = 1.3) + geom_point(aes(shape = Treatment), position = pd, 
+        size = 4) + scale_shape_manual(values = c(16, 16)) + 
+        xlab("Time (weeks)") + 
+        ylab(expression(~Respiration~(ppm~CO[2]~d^-1~g^-1~soil))) 
+
+co + scale_y_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 250), 
+        sec.axis = sec_axis(~ . * 1, labels = c(" "," "," ", " ", " "))) +
+        theme_classic() +
+        theme(axis.text.y=element_text(colour = "black", size = 18),
+        axis.text.x=element_text(colour = "black", size = 20),
+        axis.ticks = element_line(size = 1.25),
+        axis.ticks.length = unit(.25, "cm"),
+        axis.title.y = element_text(size = 18, colour = "black", 
+              margin = margin(0,10,0,0)),
+        axis.title.x = element_text(size = 18, colour = "black", 
+              margin = margin(15,10,0,10)),
+        panel.border = element_rect(linetype = "solid", colour = "black", 
+              size = 2, fill = NA),
+        legend.position="none") + 
+        scale_color_manual(values=c('gray15','gray15')) + 
+  annotate("text", x = 2.5, y = 750, label = "-Rpf", cex=7) + 
+  annotate("text", x = 4.5, y = 250, label = "+Rpf", cex=7) +
+  #annotate("text", x = 1.5, y = 975, label = "Rpf: P = 0.002", cex=7) + 
+  annotate("text", x = 1.5, y = 975, label = "Rpf: italic(P)==0.002", parse = TRUE, cex = 7) +
+  #annotate("text", x = 0.925, y = 900, label = "n = 8", cex=7)
+  annotate("text", x = 1.65, y = 900, label = "Time: italic(P)<0.0001", parse = TRUE, cex  =7)
+
+ggsave("../figures/Fig3.Respiration.png", width = 20, height = 15, units = "cm")
+```
+
+
