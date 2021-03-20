@@ -198,7 +198,14 @@ heip <- function(SAD = " "){
   return(heip_e) 
 }
   
- 
+
+# Smith and Wilson's Evenness Index (Evar)
+Evar <- function(x){
+  x <- as.vector(x[x > 0])
+  e <- 1 - (2/pi)*atan(var(log(x)))
+  return(e)
+}
+
 # resampling function for calculating species richness  
 richness.iter <- function(input  = " ", 
                           cutoff = " ", 

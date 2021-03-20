@@ -1,0 +1,479 @@
+---
+title: "Resuscitation of microbial seed banks"
+author: "Venus Kuo and Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+# 1. Objective
+Evaluate how recombinant Rpf affects bacterial diversity and composition
+
+# Set working environment and load packages 
+
+```{r setup, message = FALSE, warning = FALSE}
+# Clear and set working directory 
+rm(list = ls())
+setwd("~/GitHub/BrassicaRpf/data")
+
+# Require and/or install packages 
+package.list <- c('vegan', 'nlme' ,'data.table', 'plyr', 'pander', 'reshape', 
+                  'grid', 'png', 'car', 'bbmle', 'reshape2', 'ggplot2', 
+                  'picante', 'ade4', 'phangorn', 'indicspecies', 'reshape')
+#'BiodiversityR'
+
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+# Load sem function
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+```
+
+
+## 2. Load data 
+
+```{r, message=FALSE, warning=FALSE}
+source("~/GitHub/BrassicaRpf/bin/DiversityFunctions.R")
+source("~/GitHub/BrassicaRpf/bin/MothurTools2.R")
+source("~/GitHub/BrassicaRpf/bin/phylodiversity2.R")
+
+# Run All: Select if all section are to be re-run
+run.all <- TRUE
+
+# Load files
+  # design = general design file for experiment
+  # shared = OTU table from mothur with sequence similarity clustering
+  # tax    = Taxonomy for 97% similarity OTUs
+
+design <- "~/GitHub/BrassicaRpf/data/Brassica.design.txt"
+shared <- "~/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.shared"
+tax <- "~/GitHub/BrassicaRpf/mothur/output/Brassica.bac.final.0.03.taxonomy"
+
+# Import Design 
+design <- read.delim(design, header=T, row.names=1)
+# Import Shared Files
+OTU <- read.otu(shared = shared, cutoff = "0.03") # 97% similarity 
+# Import Taxonomy
+OTU.tax <- read.tax(taxonomy = tax, format = "rdp")  
+# Import Phylogenetic tree 
+OTU.tre <- read.tree("../phylo/Brassica.bac.rename.tree.2") 
+```
+
+## 3. Coverage
+
+```{r}
+### Sequence Coverage 
+# Remove OTUs with less than two occurrences across all sites # 
+OTU <- OTU[, which(colSums(OTU) >= 2)]
+
+# Remove mock community # 
+OTU <- OTU[1:20, ]  
+
+# Determine coverage of sequences # 
+cov.seqs <- count.groups(OTU)
+cov.mean <- mean(cov.seqs) # 160,871
+cov.sem <- sem(cov.seqs) # 16,095.38
+cov.min <- min(cov.seqs) # 79,797
+total.seqs <- sum(cov.seqs) # 3,217,419 
+
+# Good's coverage
+goods.c <- function(x = ""){
+              1 - (apply(OTU, 1, function(x){sum(x == 1)}) / rowSums(x))
+}
+
+goods.c.Brassica <- goods.c(OTU)
+mean.good.c <- mean(goods.c.Brassica) # 0.984  Good mean coverage
+min.good.c <- min(goods.c.Brassica) # 0.967  Good lowest coverage
+```
+
+
+## 4. Alpha diversity 
+
+```{r}
+# Resampling code to estimate alpha diversity (used if run.all = T)
+if (run.all == TRUE){
+  rich <- round(richness.iter(input = OTU, size = 1000,
+                              iters = 100, shared = "FALSE"), 3)
+  #even <- round(evenness.iter(input = OTU, size = 1000,
+  #                            iters = 100, shared = "FALSE",
+  #                            method = "simp_even"), 3)
+  even <- round(evenness.iter(input = OTU, size = 1000,
+                              iters = 100, shared = "FALSE",
+                              method = "Evar"), 3)
+  
+  rare <- rarefy(OTU, 1000, se = FALSE, MARGIN = 1)
+  # Write output to files
+  write.table(rich, "../data/rich.txt", sep = "\t",
+              col.names = T, row.names = T)
+  write.table(even, "../data/even.txt", sep = "\t",
+              col.names = T, row.names = T)
+}
+
+# Read in alpha diversity files from above
+rich2 <- read.table("../data/rich.txt", sep = "\t")
+even2 <- read.table("../data/even.txt", sep = "\t")
+
+# Merge data to design and calculate mean and sem per sample
+rich.data <- merge(design, rich2, by = "row.names")
+row.names(rich.data) <- rich.data$Row.names
+rich.data <- rich.data[sort(row.names(rich.data)), ]
+rich.mean <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, mean, na.rm = TRUE),3)
+rich.sem <- round(apply(rich.data[5:(4 + dim(rich2)[2])], 1, sem, na.rm = TRUE), 3)
+
+even.data <- merge(design, even2, by = "row.names")
+row.names(even.data) <- even.data$Row.names
+even.data <- even.data[sort(row.names(even.data)), ]
+even.mean <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, mean, na.rm = TRUE),3)
+even.sem <- round(apply(even.data[5:(4 + dim(even2)[2])], 1, sem, na.rm = TRUE),4)
+
+# Make new dataframe merging design file and mean diversity
+Brassica.div <- data.frame(design[sort(row.names(design)), ], rich.mean, even.mean)
+
+# Take averages of technical reps
+rich.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, rich = mean(rich.mean))
+even.rep.ave <- ddply(Brassica.div, .(treatment, type, rep), summarize, even = mean(even.mean))
+
+# Reshape data 
+rich.2 <- reshape(rich.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep"), direction = "wide")
+even.2 <- reshape(even.rep.ave[,1:4], timevar = "type",
+                   idvar = c("treatment", "rep"), direction = "wide")
+
+
+# Tables
+rich.means <- data.frame(mean(rich.2[1:5,3]), mean(rich.2[6:10,3]), 
+                         mean(rich.2[1:5,4]), mean(rich.2[6:10,4]))
+colnames(rich.means) <- c("-Rpf,RNA", "+Rpf,RNA", "-Rpf,DNA", "+Rpf,DNA")
+
+rich.sem <- data.frame(sem(rich.2[1:5,3]), sem(rich.2[6:10,3]), 
+                         sem(rich.2[1:5,4]), sem(rich.2[6:10,4]))
+colnames(rich.sem) <- c("-Rpf,RNA", "+Rpf,RNA", "-Rpf,DNA", "+Rpf,DNA")
+
+
+even.means <- data.frame(mean(even.2[1:5,3]), mean(even.2[6:10,3]), 
+                         mean(even.2[1:5,4]), mean(even.2[6:10,4]))
+colnames(even.means) <- c("-Rpf,RNA", "+Rpf,RNA", "-Rpf,DNA", "+Rpf,DNA")
+
+even.sem <- data.frame(sem(even.2[1:5,3]), sem(even.2[6:10,3]), 
+                         sem(even.2[1:5,4]), sem(even.2[6:10,4]))
+colnames(even.sem) <- c("-Rpf,RNA", "+Rpf,RNA", "-Rpf,DNA", "+Rpf,DNA")
+
+# Statistical test
+
+# One-way ANOVA
+RNA <- Brassica.div[ which(Brassica.div$type == 'cDNA'), ]
+DNA <- Brassica.div[ which(Brassica.div$type == 'DNA'), ]
+
+RNA.aov.rich <- aov(rich.mean ~ treatment, RNA)
+summary(RNA.aov.rich)
+
+DNA.aov.rich <- aov(rich.mean ~ treatment, DNA)
+summary(DNA.aov.rich)
+
+RNA.aov.even <- aov(even.mean ~ treatment, RNA)
+summary(RNA.aov.even)
+
+DNA.aov.even <- aov(even.mean ~ treatment, DNA)
+summary(DNA.aov.even)
+
+# Two-way ANOVA
+aov2way.rich <- aov(rich.mean ~ treatment*type, Brassica.div)
+summary(aov2way.rich)
+
+aov2way.even <- aov(even.mean ~ treatment*type, Brassica.div)
+summary(aov2way.even)
+```
+
+## 5. Beta diversity
+
+```{r}
+# Make presence-absence matrix
+OTU.PA <- (OTU > 0) * 1
+
+# Make relative abundance matrix
+OTU.REL <- OTU
+for (i in 1:dim(OTU)[1]){
+  OTU.REL[i,] <- OTU[i,]/sum(OTU[i,])
+  }
+
+# Log-transform relative abundances
+OTU.REL.log <- decostand(OTU, method = "log")
+
+# Generate sample distance matrix from log-transformed relative abundance of OTU
+Brassica.bc.dis <- vegdist(OTU.REL.log, method = "bray", binary = "FALSE")
+Brassica.dis.mean <- mean(Brassica.bc.dis)
+
+# Principal Coordinates Analysis (PCoA)
+Brassica.PCoA <- cmdscale(Brassica.bc.dis, eig = TRUE, k = 3)
+explainvar1 <- round(Brassica.PCoA$eig[1] / sum(Brassica.PCoA$eig), 3) * 100 # 24.5%
+explainvar2 <- round(Brassica.PCoA$eig[2] / sum(Brassica.PCoA$eig), 3) * 100 # 11.2%
+explainvar3 <- round(Brassica.PCoA$eig[3] / sum(Brassica.PCoA$eig), 3) * 100 # 7.9%
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+# OTU Scores
+otu.scores <- t(cor(Brassica.PCoA$points, OTU.REL))
+otu.scores <- as.matrix(otu.scores)[,1:2]
+otu.scores <- otu.scores[abs(otu.scores[,1]) > 0.7|abs(otu.scores[,2]) > 0.7,]
+
+# Average BC Distance Between Treatments
+Brassica.bc.dis.m <- as.matrix(Brassica.bc.dis)
+all.equal(row.names(Brassica.div), rownames(Brassica.bc.dis.m))
+
+treatment.div <- unique(Brassica.div$treatment)
+treatment.dis <- rep(NA, length(treatment.div))
+for(i in 1:length(treatment.div)){
+  temp <- row.names(Brassica.div[Brassica.div$treatment == treatment.div[i], ])
+  treatment.dis[i] <- Brassica.bc.dis.m[temp[1], temp[2]]
+}
+
+mean(treatment.dis)
+```
+
+# 6. Ordination
+
+```{r}
+# Plot figure -- Supplement for all bacteria ordination
+png(filename="../figures/Fig5.BacteriaComp.png",
+    width = 1800, height = 800, res = 96*2)
+
+layout(matrix(1:3, 1, 3), widths = c(20, 9, 2.5))
+
+par(mar = c(7, 10, 1, 0) + 0.5)
+
+plot(Brassica.PCoA$points[ ,1], Brassica.PCoA$points[ ,2],
+     ylim = c(-0.4, 0.4), xlim = c(-0.5, 0.4),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""), line = 5,
+     #xlab = "", ylab = "", xaxt = "n", yaxt = "n",
+     pch = 22, cex = 2.0, type = "n", cex.lab = 2.5, cex.axis = 3,
+     axes = FALSE)
+
+# Add Axes
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1, tck=-0.025)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 2, las = 1, tck=-0.025)
+axis(side = 3, labels = F, lwd.ticks = 2, cex.axis = 2, las = 1, tck=-0.025)
+axis(side = 4, labels = F, lwd.ticks = 2, cex.axis = 2, las = 1, tck=-0.025)
+abline(h = 0, v = 0, lty = 3)
+
+box(lwd = 2)
+
+# Subset data
+all.equal(row.names(Brassica.PCoA$points), rownames(Brassica.div))
+Brassica.points <- data.frame(Brassica.PCoA$points, Brassica.div)
+
+# Active community
+Brassica.active.rpf <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.active.no <- Brassica.points[ which(Brassica.points$type == "cDNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+# Total community
+Brassica.total.rpf <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf+"), ]
+Brassica.total.no <- Brassica.points[ which(Brassica.points$type == "DNA" &
+                                   Brassica.points$treatment == "Rpf-"), ]
+
+# Add points
+# Active community Rpf+
+points(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2], pch = 21,
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
+# Active community Rpf-
+points(Brassica.active.no[ ,1], Brassica.active.no[ ,2], pch = 21,
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)   
+# Total community Rpf+ 
+points(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2], pch = 24,
+       cex = 3.5, col = "Black", bg = "grey15", lwd= 2.5)
+# Total community Rpf-
+points(Brassica.total.no[ ,1], Brassica.total.no[ ,2], pch = 24,
+       cex = 3.5, col = "Black", bg = "lightgrey", lwd= 2.5)
+
+# Add ellipses 
+# Active Rpf+
+ordiellipse(cbind(Brassica.active.rpf[ ,1], Brassica.active.rpf[ ,2]), Brassica.active.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Active Rpf-
+ordiellipse(cbind(Brassica.active.no[ ,1], Brassica.active.no[ ,2]), Brassica.active.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf+
+ordiellipse(cbind(Brassica.total.rpf[ ,1], Brassica.total.rpf[ ,2]), Brassica.total.rpf$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+# Total Rpf- 
+ordiellipse(cbind(Brassica.total.no[ ,1], Brassica.total.no[ ,2]), Brassica.total.no$treatment, kind="sd", conf=0.95,
+            lwd=2, lty=3, draw="lines", col="black", label=FALSE)
+
+# Add legend outside
+par(mar = c(4, 0, 5, 1) + 0.5)
+plot.new()
+legend(0, 1, c("Active, -Rpf", "Active, +Rpf", "Total, -Rpf", "Total, +Rpf"),
+       pch = c(21, 21, 24, 24),
+       col = c("Black", "Black", "Black", "Black"),
+       pt.bg = c("lightgrey", "grey15", "lightgrey", "grey15"),
+       bty = "n", y.intersp = 1, pt.cex = 3.2, cex = 2, lwd= 2, lty =  NA)
+
+# Sample number label
+# mtext(text = expression(italic("n")~" = 5"), line = 1, adj = -0.65, col="black", cex = 1.5)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Fig5.BacteriaComp.png")
+grid.raster(img)
+```
+
+
+# 7. Multivariate tests
+
+```{r}
+# PERMANOVA - test for main effects and interactions
+
+# Add factor for pot number to account of paired/match design of study
+Brassica.div$pot <- c(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10)
+Brassica.div$pot <- as.factor(Brassica.div$pot) #unranked order
+
+# 1) PERMANOVA to test Rpf and metabolic status effects on soil bacterial community structure
+all.bray.permanova <- adonis(OTU.REL.log ~ type + treatment + pot + 
+                          type*treatment , data = Brassica.div,
+                         method = "bray", binary = FALSE, permutations = 999)
+all.bray.permanova # DNA.RNA, P = 0.001; Rpf, P = 0.003; DNA.RNA x Rpf, P = 0.178
+
+
+# 2) Indicator analysis - identify taxa contributing to differences 
+
+# Phi coefficients (actually biserial since we're using abundance data)
+# https://cran.r-project.org/web/packages/indicspecies/vignettes/indicspeciesTutorial.pdf
+
+# Treatment code
+Rpf.treat <-c(1,1,1,1,1,2,2,2,2,2) # -Rpf then + Rpf
+
+# a) Run phi analysis: DNA
+phi.DNA <- multipatt(OTU.REL.log[11:20,], cluster = Rpf.treat, func = "r.g", 
+                     control = how(nperm = 999))
+
+# Subset for significant correlations greater than 0.7
+phi.sig.DNA <- phi.DNA$sign[ which(phi.DNA$sign[5] <= 0.05 & phi.DNA$sign[4] >= abs(0.7)), ]
+
+# i.) Taxa associated with -RPF treatment 
+phi.sig.DNA.minus <- phi.sig.DNA[ which(phi.sig.DNA[1] == 1),] # DNA ~ -Rpf, n = 146
+imp.otu.DNA.minus <- as.vector(rownames(phi.sig.DNA.minus))
+imp.tax.DNA.minus <- OTU.tax[which (OTU.tax$OTU %in% imp.otu.DNA.minus), ] 
+imp.tax.DNA.minus.table <- table(imp.tax.DNA.minus$Phylum)
+imp.tax.DNA.minus.table.per <- imp.tax.DNA.minus.table/dim(imp.tax.DNA.minus)[1]*100
+# Plactomycetes = 43 %, Protoebacteria = 21 %, Chloroflexi = 16 %, Actinos = 4.8 %
+
+# ii.) Taxa associated with +RPF treatment 
+phi.sig.DNA.plus <- phi.sig.DNA[ which(phi.sig.DNA[2] == 1),] # DNA ~ +Rpf, n = 78
+imp.otu.DNA.plus <- as.vector(rownames(phi.sig.DNA.plus))
+imp.tax.DNA.plus <- OTU.tax[which (OTU.tax$OTU %in% imp.otu.DNA.plus), ] 
+imp.tax.DNA.plus.table <- table(imp.tax.DNA.plus$Phylum)
+imp.tax.DNA.plus.table.per <- imp.tax.DNA.plus.table/dim(imp.tax.DNA.plus)[1]*100
+# Proteobacteria = 53 %, Bacteroidetes = 25 %, no Actinos
+
+# b) Run phi analysis: RNA
+phi.RNA <- multipatt(OTU.REL.log[1:10,], cluster = Rpf.treat, func = "r.g", 
+                     control = how(nperm = 999))
+
+# Subset for significant correlations greater than 0.7
+phi.sig.RNA <- phi.RNA$sign[ which(phi.RNA$sign[5] <= 0.05 & phi.RNA$sign[4] >= abs(0.7)), ]
+
+# i.) Taxa associated with -RPF treatment 
+phi.sig.RNA.minus <- phi.sig.RNA[ which(phi.sig.RNA[1] == 1),] # RNA ~ -Rpf, n = 49
+imp.otu.RNA.minus <- as.vector(rownames(phi.sig.RNA.minus))
+imp.tax.RNA.minus <- OTU.tax[which (OTU.tax$OTU %in% imp.otu.RNA.minus), ] 
+imp.tax.RNA.minus.table <- table(imp.tax.RNA.minus$Phylum)
+imp.tax.RNA.minus.table.per <- imp.tax.RNA.minus.table/dim(imp.tax.RNA.minus)[1]*100
+# Protoebacteria = 41 %, Planctomycetes = 18 %, Acidobacteria = 14 %, Actino = 4.1 %
+
+# ii.) Taxa associated with +RPF treatment 
+phi.sig.RNA.plus <- phi.sig.RNA[ which(phi.sig.RNA[2] == 1),] # RNA ~ +Rpf, n = 59
+imp.otu.RNA.plus <- as.vector(rownames(phi.sig.RNA.plus))
+imp.tax.RNA.plus <- OTU.tax[which (OTU.tax$OTU %in% imp.otu.RNA.plus), ] 
+imp.tax.RNA.plus.table <- table(imp.tax.RNA.plus$Phylum)
+imp.tax.RNA.plus.table.per <- imp.tax.RNA.plus.table/dim(imp.tax.RNA.plus)[1]*100
+# Proteobacteria = 83 %, Bacteroidetes = 8.4 %
+
+# iii.) Is there any overlap between important taxa between DNA and RNA pools? 
+shared.RPF.plus <- intersect(imp.tax.DNA.plus, imp.tax.RNA.plus) # Otu2365
+shared.Rpf.minus <- intersect(imp.otu.RNA.minus, imp.otu.DNA.minus) # Otu00657, Otu01716, Otu02187
+
+# c) Identify active taxa that responded to Rpf
+non.responder.otu <- c(imp.otu.DNA.minus, imp.otu.DNA.plus, imp.otu.DNA.minus) # n = 368
+responder.otu <- imp.tax.RNA.plus[!(imp.tax.RNA.plus %in% non.responder.otu)] # n = 59
+responder.table.phylum <- table(responder.otu$Phylum)/dim(responder.otu)[1]*100
+# Proteobacteria = 83 %; Actinos = 1.7 %
+responder.table.fammily <- table(responder.otu$Genus)/dim(responder.otu)[1]*100
+# Polyangiaceae = 18.6 %, Alpha unclass = 5.1 %, Rhizobiales unclass = 6.8 %,
+# Caulobacteraceae = 10.2 %, Rhodospirillaceaea = 8.5 %, Haliangiaceae = 3.4 %,
+# Sphingomonadaceae = 6.8 %, Rhizobiales_Incertae_Sedis = 6.8%
+responder.table.genus <- table(responder.otu$Genus)/dim(responder.otu)[1]*100
+# Sorganium = 13.6 %, Polyaginaceae = 5 %, "uncultured" = 11.9 %, Rhizobiales = 6.8 %
+```
+
+# 8. Characterize cross-sample phylum relative abundance
+```{r}
+# Relative abundance cut off (%)
+cut.off <- 1
+
+BD1 <- OTU[11,]
+BD1.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BD1)), ]
+BD1.table <- table(BD1.tax$Phylum)/dim(BD1.tax)[1]*100
+BD1.table.abund <- BD1.table[which(BD1.table[1:length(BD1.table)] >= cut.off)]
+
+BD2 <- OTU[12,]
+BD2.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BD2)), ]
+BD2.table <- table(BD2.tax$Phylum)/dim(BD2.tax)[1]*100
+BD2.table.abund <- BD2.table[which(BD2.table[1:length(BD2.table)] >= cut.off)]
+
+BD3 <- OTU[13,]
+BD3.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BD3)), ]
+BD3.table <- table(BD3.tax$Phylum)/dim(BD3.tax)[1]*100
+BD3.table.abund <- BD3.table[which(BD3.table[1:length(BD3.table)] >= cut.off)]
+
+BD4 <- OTU[14,]
+BD4.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BD4)), ]
+BD4.table <- table(BD4.tax$Phylum)/dim(BD4.tax)[1]*100
+BD4.table.abund <- BD4.table[which(BD4.table[1:length(BD4.table)] >= cut.off)]
+
+BD5 <- OTU[15,]
+BD5.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BD5)), ]
+BD5.table <- table(BD5.tax$Phylum)/dim(BD5.tax)[1]*100
+BD5.table.abund <- BD5.table[which(BD5.table[1:length(BD5.table)] >= cut.off)]
+
+BDR1 <- OTU[16,]
+BDR1.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BDR1)), ]
+BDR1.table <- table(BDR1.tax$Phylum)/dim(BDR1.tax)[1]*100
+BDR1.table.abund <- BDR1.table[which(BDR1.table[1:length(BDR1.table)] >= cut.off)]
+
+BDR2 <- OTU[17,]
+BDR2.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BDR2)), ]
+BDR2.table <- table(BDR2.tax$Phylum)/dim(BDR2.tax)[1]*100
+BDR2.table.abund <- BDR2.table[which(BDR2.table[1:length(BDR2.table)] >= cut.off)]
+
+BDR3 <- OTU[18,]
+BDR3.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BDR3)), ]
+BDR3.table <- table(BDR3.tax$Phylum)/dim(BDR3.tax)[1]*100
+BDR3.table.abund <- BDR3.table[which(BDR3.table[1:length(BDR3.table)] >= cut.off)]
+
+BDR4 <- OTU[19,]
+BDR4.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BDR4)), ]
+BDR4.table <- table(BDR4.tax$Phylum)/dim(BDR4.tax)[1]*100
+BDR4.table.abund <- BDR4.table[which(BDR4.table[1:length(BDR4.table)] >= cut.off)]
+
+BDR5 <- OTU[20,]
+BDR5.tax<-OTU.tax[which(OTU.tax$OTU %in% names(BDR5)), ]
+BDR5.table <- table(BDR5.tax$Phylum)/dim(BDR5.tax)[1]*100
+BDR5.table.abund <- BDR5.table[which(BDR5.table[1:length(BDR5.table)] >= cut.off)]
+
+Phylum.Rel <- (BD1.table.abund + BD2.table.abund + BD3.table.abund + 
+        BD4.table.abund + BD5.table.abund + BDR1.table.abund + BD2.table.abund +
+        BD3.table.abund + BD4.table.abund + BD5.table.abund)/10
+
+# Proteobacteria (49.2 %), Acidobacteria (14.3%), Verrucomicrobia (7.5 %)
+# Planctomycetes (6.6 %), Bacteroidetes (5.2 %), Actinobacteria (4.0 %), 
+# Chloroflexi (1.9 %), Firmicutes (1.5 %)
+```

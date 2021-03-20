@@ -1,0 +1,301 @@
+---
+title: "Resuscitation of microbial seed banks"
+author: "Venus Kuo and Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+# Objective
+Evaluate how recombinant Rpf affects plant traits
+
+# Set working environment and load packages 
+
+```{r setup, message = FALSE, warning = FALSE}
+# Clear and set working directory 
+rm(list = ls())
+setwd("~/GitHub/BrassicaRpf/data")
+
+# Require and/or install packages 
+package.list <- c('vegan', 'plyr', 'grid', 'png', 'plyr', 'reshape2') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+# Load sem function
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+
+# Load t-test custom functions # 
+ttest <- function(reg, coefnum, val){
+  co <- coef(summary(reg))
+  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
+  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
+  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
+}
+```
+
+# Rpf effects on microbial abundance
+
+```{r}
+```{r}
+# Load microbial qPCR data
+abundance <- read.csv("~/GitHub/BrassicaRpf/data/qPCR.txt", sep = ",", header = TRUE) 
+
+# remove week 1 data 
+abundance <- subset(abundance, Week == "6")
+
+# Reset data frame index 
+rownames(abundance) <- NULL
+
+# Standarde gene copy abundances by soil 
+abundance$stdGeneCopy <- (abundance$GeneCopy)/(abundance$Soil)
+
+# Log10 transform standardized gene copy number 
+abundance$log10stdGeneCopy <- log10(abundance$stdGeneCopy)
+
+# Split abundance dataset by fungi and bacteria  
+data.sub.bac <- subset(abundance, Gene == "rRNA")
+data.sub.fun <- subset(abundance, Gene == "ITS")
+
+# Calculate fungi to bacteria ratios 
+gca.B <- data.sub.bac$stdGeneCopy
+gca.F <- data.sub.fun$stdGeneCopy
+abundance$FB <- (gca.F/gca.B)
+ratioFB <- abundance[1:18, ]
+ratioFB <- subset(ratioFB, select=(c(Treatment, Week, FB)))
+
+# Subset abundance dataset 
+data.sub <- subset(abundance, select = (c(Treatment, Gene, stdGeneCopy)))
+
+# Melting the dataset 
+data.m <- melt(data.sub)
+
+# Bacterial abundance data for plotting 
+bac.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$Gene == "rRNA"),]
+bac.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$Gene == "rRNA"),]
+
+# Bacterial abundance summary table 
+bac.mean <- aggregate(data.sub.bac$stdGeneCopy ~ Treatment, data.sub.bac, mean)
+bac.sem <- aggregate(data.sub.bac$stdGeneCopy ~ Treatment, data.sub.bac, sem)
+bac.sem.LL <- bac.mean[2] - bac.sem[2]
+bac.sem.UL <- bac.mean[2] + bac.sem[2]
+bac.table <- data.frame(bac.mean[1], bac.mean[2], bac.sem[2],
+          bac.sem.LL[1], bac.sem.UL[1])
+colnames(bac.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+bac.table <- bac.table[order(bac.table$mean),]
+
+# Fungal abundance data for plotting 
+fun.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & data.m$Gene == "ITS"),]
+fun.con <- data.m[ which(data.m$Treatment == "Rpf-" & data.m$Gene == "ITS"),]
+
+# Fungal abundance summary table
+fun.mean <- aggregate(data.sub.fun$stdGeneCopy ~ Treatment, data.sub.fun, mean)
+fun.sem <- aggregate(data.sub.fun$stdGeneCopy ~ Treatment, data.sub.fun, sem)
+fun.sem.LL <- fun.mean[2] - fun.sem[2]
+fun.sem.UL <- fun.mean[2] + fun.sem[2]
+fun.table <- data.frame(fun.mean[1], fun.mean[2], fun.sem[2],
+          fun.sem.LL[1], fun.sem.UL[1])
+colnames(fun.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+fun.table <- fun.table[order(fun.table$mean),]
+
+# Fungi: Bacteria ratio data for plotting
+FB.rpf <- ratioFB[ which(ratioFB$Treatment == "Rpf+"),]
+FB.con <- ratioFB[ which(ratioFB$Treatment == "Rpf-"),]
+
+# Fungal: Bacteria ratio summary table
+FB.mean <- aggregate(ratioFB$FB ~ Treatment, ratioFB, mean)
+FB.sem <- aggregate(ratioFB$FB ~ Treatment, ratioFB, sem)
+FB.sem.LL <- FB.mean[2] + FB.sem[2]
+FB.sem.UL <- FB.mean[2] - FB.sem[2]
+FB.table <- data.frame(FB.mean[1], FB.mean[2], FB.sem[2],
+          FB.sem.LL[1], FB.sem.UL[1])
+colnames(FB.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+FB.table <- FB.table[order(FB.table$mean),]
+```
+
+# Statistical tests
+
+```{r}
+# Bacterial abundance
+bac.ttest <- t.test(stdGeneCopy ~ Treatment, data = data.sub.bac)
+bac.ttest    # Significant: t = 2.7069, df = 14.777, p = 0.0164
+
+# Fungal abundance 
+fun.ttest <- t.test(stdGeneCopy ~ Treatment, data = data.sub.fun)
+fun.ttest    # Significant: t = -3.2719, df = 11.701, p = 0.00689
+
+# F:B ratio
+FB.ttest <- t.test(FB ~ Treatment, data = ratioFB)
+FB.ttest     # Significant: t= -2.8454, df = 9.4476, p = 0.01835
+```
+
+
+# Plot microbial abundance
+
+```{r}
+png(filename="../figures/Fig4.MicroAbund.png",
+    width = 1200, height = 800, res = 96*2)
+par(oma=c(7,3,7,1), mar=c(2,3,3,4), mfrow=c(1,3))
+
+# Panel 1: Bacterial abundance 
+abun.bac.fig <- plot(jitter(rep(1, length(bac.con$value)), amount = 0.1), bac.con$value, 
+      ylim = c(0, 2.4E6), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(bac.rpf$value)), amount = 0.1), bac.rpf$value, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add means
+points(1, mean(bac.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(bac.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('16S rRNA gene copy/ g soil'), side = 2,
+      outer = FALSE, cex = 1, line = 3.5, adj = 0.5)
+
+# Major axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0E0", "8.0E5", "1.6E6", "2.4E6"), 
+     at = c(0.0E0, 8.0E5, 1.6E6, 2.4E6))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0E0, 8.0E5, 1.6E6, 2.4E6), labels = F, tck = -0.05)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add SEM
+arrows(x0 = c(2,1), y0 = bac.table$mean, y1 = bac.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(2,1), y0 = bac.table$mean, y1 = bac.table$UCI, angle = 90,
+       length=0.15, lwd = 2)
+
+# Panel label
+text(0.7,2.3E6, labels = "A", col="black", cex = 2)
+
+# P-value label
+mtext(text = expression(italic("P")~" = 0.016") , side = 3, line = -1.2, 
+      adj = 0.925, col = "black", cex = 0.8)
+# Sample number label
+#mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+
+# Panel 2: fungal abundance
+abun.fun.fig <- plot(jitter(rep(1, length(fun.con$value)), amount = 0.1), 
+      fun.con$value, ylim = c(0, 1.5E6), xlim = c(0.5, 2.5), pch = 21, 
+      col = "lightgrey", bg = "lightgrey", lwd = 3.5, cex = 1.7, yaxt = "n", 
+      xaxt = "n", cex.lab = 2, cex.axis = 2, las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(fun.rpf$value)), amount = 0.1), fun.rpf$value, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add means 
+points(1, mean(fun.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(fun.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('ITS gene copy / g soil'), side = 2,
+      outer = FALSE, cex = 1, line = 3.5, adj = 0.5)
+
+# Major axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0E0", "5.0E5", "1.0E6", "1.5E6"), 
+     at = c(0.0E0, 5.0E5, 1.0E6, 1.5E6))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0E0, 5.0E5, 1.0E6, 1.5E6), labels = F, tck = -0.05)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add SEM
+arrows(x0 = c(1,2), y0 = fun.table$mean, y1 = fun.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(1,2), y0 = fun.table$mean, y1 = fun.table$UCI, angle = 90,
+       length=0.15, lwd = 2)
+
+# Panel label 
+text(0.7, 1.45E6, labels = "B", col = "black", cex = 2)
+
+# p-value 
+mtext(text = expression(italic("P")~" = 0.007") , side = 3, line = -1.2, 
+      adj = 0.925, col = "black", cex = 0.8)
+# Sample number label
+#mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+
+# Panel 3: F:B
+FB.fig <- plot(jitter(rep(1, length(FB.con$FB)), amount = 0.1), FB.con$FB, 
+      ylim = c(0, 1.5), xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", 
+      bg = "lightgrey", lwd = 3.5, cex = 1.7, yaxt = "n", xaxt = "n", 
+      cex.lab = 2, cex.axis = 2, las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+points(jitter(rep(2, length(FB.rpf$FB)), amount = 0.1), FB.rpf$FB, pch = 21, 
+       bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Adding mean data pointfor each treatment # 
+points(1, mean(FB.con$FB), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(FB.rpf$FB), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('Fungal : bacterial ratio'), side = 2,
+      outer = FALSE, cex = 1, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0", "0.5", "1.0", "1.5"), 
+     at = c(0.0, 0.5, 1.0, 1.5))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add SEM 
+arrows(x0 = c(1,2), y0 = FB.table$mean, y1 = FB.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(1,2), y0 = FB.table$mean, y1 = FB.table$UCI, angle = 90,
+       length = 0.15, lwd = 2)
+
+# Panel label
+text(0.7, 1.45, labels = "C", col = "black", cex = 2)
+
+# p-value 
+mtext(text = expression(italic("P")~" = 0.018") , side =3, line = -1.2, 
+      adj = 0.925, col = "black", cex = 0.8)
+# Sample number label
+#mtext(text = expression(italic("n")~" = 9"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Fig4.MicroAbund.png")
+grid.raster(img)
+```

@@ -1,0 +1,661 @@
+---
+title: "Resuscitation of microbial seed banks"
+author: "Venus Kuo and Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+# Objective
+Evaluate how recombinant Rpf affects plant traits
+
+# Set working environment and load packages 
+
+```{r setup, message = FALSE, warning = FALSE}
+# Clear and set working directory 
+rm(list = ls())
+setwd("~/GitHub/BrassicaRpf/data")
+
+# Require and/or install packages 
+package.list <- c('vegan', 'plyr', 'grid', 'png', 'plyr', 'reshape2') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+
+# Load sem function
+sem <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+
+# Load t-test custom functions # 
+ttest <- function(reg, coefnum, val){
+  co <- coef(summary(reg))
+  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
+  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
+  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
+}
+```
+
+
+# Rpf effects on Brassica traits 
+
+```{r}
+# Load plant trait data 
+plant.data <- read.delim("~/GitHub/BrassicaRpf/data/plantTrait.txt", 
+              sep = ",", header = TRUE)
+
+# Remove soil sterilization treatment from dataset 
+plant.data <- subset(plant.data, soil == "Live") 
+
+# Subseting data for relevant information 
+data.sub <- subset(plant.data, select=(c(Treatment, abiomass, bbiomass)))
+
+# Combining the above and belowground biomass 
+data.m <- melt(data.sub) 
+
+# 1. Above-ground shoot biomass
+
+shoot.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & 
+            data.m$variable == "abiomass"),]
+shoot.con <- data.m[ which(data.m$Treatment == "Rpf-" & 
+            data.m$variable == "abiomass"),]
+
+# Generate summary table
+shoot.mean <- aggregate(plant.data$abiomass ~ Treatment, plant.data, mean)
+shoot.sem <- aggregate(plant.data$abiomass ~ Treatment, plant.data, sem)
+shoot.sem.LL <- shoot.mean[2] + shoot.sem[2]
+shoot.sem.UL <- shoot.mean[2] - shoot.sem[2]
+shoot.table <- data.frame(shoot.mean[1], shoot.mean[2], shoot.sem[2],
+          shoot.sem.LL[1], shoot.sem.UL[1])
+colnames(shoot.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+shoot.table <- shoot.table[order(shoot.table$mean),]
+
+# 2. Below-ground root biomass 
+
+root.rpf <- data.m[ which(data.m$Treatment == "Rpf+" & 
+            data.m$variable == "bbiomass"),]
+root.con <- data.m[ which(data.m$Treatment == "Rpf-" & 
+            data.m$variable == "bbiomass"),]
+
+# Generate summary table
+root.mean <- aggregate(plant.data$bbiomass ~ Treatment, plant.data, mean)
+root.sem <- aggregate(plant.data$bbiomass ~ Treatment, plant.data, sem)
+root.sem.LL <- root.mean[2] + root.sem[2]
+root.sem.UL <- root.mean[2] - root.sem[2]
+root.table <- data.frame(root.mean[1], root.mean[2], root.sem[2],
+          root.sem.LL[1], root.sem.UL[1])
+colnames(root.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+root.table <- root.table[order(root.table$mean),]
+
+# 3. Flower number per plant
+
+flower.rpf <- plant.data[ which(plant.data$Treatment == "Rpf+"),]
+flower.con <- plant.data[ which(plant.data$Treatment == "Rpf-"),]
+
+# Generate summary table
+flower.mean <- aggregate(plant.data$flower.count ~ Treatment, plant.data, mean)
+flower.sem <- aggregate(plant.data$flower.count ~ Treatment, plant.data, sem)
+flower.sem.LL <- flower.mean[2] + flower.sem[2]
+flower.sem.UL <- flower.mean[2] - flower.sem[2]
+flower.table <- data.frame(flower.mean[1], flower.mean[2], flower.sem[2],
+          flower.sem.LL[1], flower.sem.UL[1])
+colnames(flower.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+flower.table <- flower.table[order(flower.table$mean),]
+
+# 4. Shoot : root ratio
+
+sr.rpf <- plant.data[ which(plant.data$Treatment == "Rpf+"),]
+sr.con <- plant.data[ which(plant.data$Treatment == "Rpf-"),]
+
+# Generate summary table
+sr.mean <- aggregate(plant.data$shoot.root ~ Treatment, plant.data, mean)
+sr.sem <- aggregate(plant.data$shoot.root ~ Treatment, plant.data, sem)
+sr.sem.LL <- sr.mean[2] + sr.sem[2]
+sr.sem.UL <- sr.mean[2] - sr.sem[2]
+sr.table <- data.frame(sr.mean[1], sr.mean[2], sr.sem[2],
+          sr.sem.LL[1], sr.sem.UL[1])
+colnames(sr.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+sr.table <- sr.table[order(sr.table$mean),]
+
+# 5. Shoot height
+
+height.rpf <- plant.data[ which(plant.data$Treatment == "Rpf+"),]
+height.con <- plant.data[ which(plant.data$Treatment == "Rpf-"),]
+
+# Generate summary table
+height.mean <- aggregate(plant.data$height ~ Treatment, plant.data, mean)
+height.sem <- aggregate(plant.data$height ~ Treatment, plant.data, sem)
+height.sem.LL <- height.mean[2] + height.sem[2]
+height.sem.UL <- height.mean[2] - height.sem[2]
+height.table <- data.frame(height.mean[1], height.mean[2], height.sem[2],
+          height.sem.LL[1], height.sem.UL[1])
+colnames(height.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+height.table <- height.table[order(height.table$mean),]
+
+# 6. Seed production
+
+seed.rpf <- plant.data[ which(plant.data$Treatment == "Rpf+"),]
+seed.con <- plant.data[ which(plant.data$Treatment == "Rpf-"),]
+
+# Generate summary table
+seed.mean <- aggregate(plant.data$seed ~ Treatment, plant.data, mean)
+seed.sem <- aggregate(plant.data$seed ~ Treatment, plant.data, sem)
+seed.sem.LL <- seed.mean[2] + seed.sem[2]
+seed.sem.UL <- seed.mean[2] - seed.sem[2]
+seed.table <- data.frame(seed.mean[1], seed.mean[2], seed.sem[2],
+          seed.sem.LL[1], seed.sem.UL[1])
+colnames(seed.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+seed.table <- seed.table[order(seed.table$mean),]
+
+
+# 7. SLA
+
+sla.rpf <- plant.data[ which(plant.data$Treatment == "Rpf+"),]
+sla.con <- plant.data[ which(plant.data$Treatment == "Rpf-"),]
+
+# Generate summary table
+sla.mean <- aggregate(plant.data$SLA ~ Treatment, plant.data, mean)
+sla.sem <- aggregate(plant.data$SLA ~ Treatment, plant.data, sem)
+sla.sem.LL <- sla.mean[2] + sla.sem[2]
+sla.sem.UL <- sla.mean[2] - sla.sem[2]
+sla.table <- data.frame(sla.mean[1], sla.mean[2], sla.sem[2],
+          sla.sem.LL[1], sla.sem.UL[1])
+colnames(sla.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+sla.table <- sla.table[order(sla.table$mean),]
+```
+
+# Statistical tests
+
+```{r}
+# Two sample t-test of Rpf effect on plant traits 
+
+# Total plant biomass 
+total.ttest <- t.test(total.biomass ~ Treatment, data = plant.data)
+total.ttest   # Significant: t = 2.8365, df = 9.2015, p = 0.0191
+
+# Root biomass
+root.ttest <- t.test(bbiomass ~ Treatment, data = plant.data)
+root.ttest    # Significant: t = 2.3017, df = 8.3705, p = 0.04895
+
+# Shoot biomass 
+shoot.ttest <- t.test(abiomass ~ Treatment, data = plant.data)
+shoot.ttest   # Significant: t = 2.704, df = 14, p = 0.01712
+
+# Flower number 
+flower.ttest <- t.test(flower.count ~ Treatment, data = plant.data)
+flower.ttest  # Marginally significant: t = 1.7954, df = 12.288, p = 0.09721
+
+# Seed number
+seed.ttest <- t.test(seed.count ~ Treatment, data = plant.data)
+seed.ttest    # Non-significant: t = 0.83156, df = 12.983, p = 0.4207
+
+# Shoot:Root ratio 
+SRratio.ttest <- t.test(shoot.root ~ Treatment, data = plant.data)
+SRratio.ttest # Non-significant: t = -1.2033, df = 12.903, p = 0.2505
+
+# Specific leaf area (SLA)
+sla.ttest <- t.test(SLA ~ Treatment, data = plant.data)
+sla.ttest     # Non-significant: t = 0.80287, df = 9.1288, p = 0.4424
+
+# Shoot height
+height.ttest <- t.test(height ~ Treatment, data = plant.data)
+height.ttest  # Non-significant: t = 1.1102, df = 13.384, p = 0.2865
+```
+
+
+# Plot plant traits
+
+```{r}
+png(filename="../figures/Fig2.PlantTraits.png",
+    width = 1200, height = 800, res = 96*2)
+
+par(oma=c(7,3,7,1), mar=c(2,3,3,3.5), mfrow=c(1,3))
+
+# Panel 1: shoot biomass
+shoot.fig <- plot(jitter(rep(1, length(shoot.con$value)), amount = 0.1), 
+      shoot.con$value, ylim = c(0, 1.5), xlim = c(0.5, 2.5), pch = 21, 
+      col = "lightgrey", bg = "lightgrey", lwd = 3.5, cex = 1.7, yaxt = "n", 
+      xaxt = "n", cex.lab = 2, cex.axis = 2, las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(shoot.rpf$value)), amount = 0.1), shoot.rpf$value, 
+       pch = 21, bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add mean  
+points(1, mean(shoot.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(shoot.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+
+box(lwd = 2)
+
+# Y-axis label # 
+mtext(expression('Shoot biomass (g)'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "0.5", "1.0", "1.5"), at = c(0, 0.5, 1.0, 1.5))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add confidence intervals 
+arrows(x0 = c(2,1), y0 = shoot.table$mean, y1 = shoot.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(2,1), y0 = shoot.table$mean, y1 = shoot.table$UCI, angle = 90,
+       length = 0.15, lwd = 2)
+
+# Panel label
+text(0.65, 1.45, labels = "A", col = "black", cex = 2)
+
+# p-value label 
+mtext(text = expression(italic("P")~" = 0.017") , side = 3, line = -1.2, 
+      adj = 0.925, col="black", cex = 0.8)
+
+# Sample number label
+#mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+
+# Panel 2: root biomass
+root.fig <- plot(jitter(rep(1, length(root.con$value)), amount = 0.1), 
+      root.con$value, ylim = c(0, 1.5), xlim = c(0.5, 2.5), 
+      pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(root.rpf$value)), amount = 0.1), root.rpf$value, 
+       pch = 21, bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add mean  
+points(1, mean(root.con$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(root.rpf$value), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+box(lwd = 2)
+
+# Y-axis label 
+mtext(expression('Root biomass (g)'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "0.5", "1.0", "1.5"), at = c(0, 0.5, 1.0, 1.5))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 0.5, 1.0, 1.5), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add confidence intervals
+arrows(x0 = c(2,1), y0 = root.table$mean, y1 = root.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(2,1), y0 = root.table$mean, y1 = root.table$UCI, angle = 90,
+       length=0.15, lwd = 2)
+
+# Panel label 
+text(0.65, 1.45 ,labels = "B", col = "black", cex = 2)
+
+# p-value label 
+mtext(text = expression(italic("P")~" = 0.049") , side =3, line = -1.2, 
+      adj = 0.925, col = "black", cex = 0.8)
+# Sample number label
+#mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+
+# Panel 3: flower count
+flowercount.fig <- plot(jitter(rep(1, length(flower.con$flower.count)), 
+      amount = 0.1), flower.con$flower.count, ylim = c(0, 15), 
+      xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", 
+      lwd = 3.5, cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(flower.rpf$flower.count)), amount = 0.1),
+       flower.rpf$flower.count, pch = 21, bg = "lightgrey", col = "lightgrey", 
+       lwd = 2, cex = 1.7)
+
+points(1, mean(flower.con$flower.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(flower.rpf$flower.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+box(lwd = 2)
+
+# Y axis label 
+mtext(expression('Flower number'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "5", "10", "15"), at = c(0, 5, 10, 15))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 5, 10, 15), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add confidence intervals
+arrows(x0 = c(2,1), y0 = flower.table$mean, y1 = flower.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(2,1), y0 = flower.table$mean, y1 = flower.table$UCI, angle = 90,
+       length=0.15, lwd = 2)
+
+# Panel label
+text(0.65, 14.5, labels = "C", col = "black", cex = 2)
+
+# p-value label 
+mtext(text = expression(italic("P")~" = 0.097") , side = 3, line = -1.2, 
+      adj = 0.925, col="black", cex = 0.8)
+# Sample number label
+#mtext(text = expression(italic("n")~" = 8"), side = 3, line = -2.2, adj = 0.925, col="black", cex=0.8)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/Fig2.PlantTraits.png")
+grid.raster(img)
+```
+
+# Plot plant traits - Supplemental
+
+```{r}
+png(filename="../figures/FigS2.PlantTraits.png",
+    width = 1200, height = 1200, res = 96*2)
+
+#par(oma=c(7,3,7,1), mar=c(2,3,3,3.5), mfrow=c(2,2))
+par(mfrow=c(2,2))
+
+# Figure for SLA, root:shoot, and shoot height, seed production
+
+# Panel 1: shoot biomass
+sr.fig <- plot(jitter(rep(1, length(sr.con$shoot.root)), amount = 0.1), 
+      sr.con$shoot.root, ylim = c(0, 4.5), xlim = c(0.5, 2.5), pch = 21, 
+      col = "lightgrey", bg = "lightgrey", lwd = 3.5, cex = 1.7, yaxt = "n", 
+      xaxt = "n", cex.lab = 2, cex.axis = 2, las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(sr.rpf$shoot.root)), amount = 0.1), sr.rpf$shoot.root, 
+       pch = 21, bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add mean  
+points(1, mean(sr.con$shoot.root), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(sr.rpf$shoot.root), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+
+box(lwd = 2)
+
+# Y-axis label # 
+mtext(expression('shoot : root'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "1.0", "2.0", "3.0", "4.0"), at = c(0, 1, 2, 3, 4))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(0, 1, 2, 3, 4), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add confidence intervals
+arrows(x0 = c(1,2), y0 = sr.table$mean, y1 = sr.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(1,2), y0 = sr.table$mean, y1 = sr.table$UCI, angle = 90,
+       length = 0.15, lwd = 2)
+
+# Panel label
+text(0.65, 4.25, labels = "A", col = "black", cex = 2)
+
+# p-value label 
+mtext(text = expression(italic("P")~" = 0.250") , side = 3, line = -1.2, 
+      adj = 0.925, col="black", cex = 0.8)
+
+
+
+# Panel 2: shoot height
+height.fig <- plot(jitter(rep(1, length(height.con$height)), amount = 0.1), 
+      height.con$height, ylim = c(12, 47), xlim = c(0.5, 2.5), pch = 21, 
+      col = "lightgrey", bg = "lightgrey", lwd = 3.5, cex = 1.7, yaxt = "n", 
+      xaxt = "n", cex.lab = 2, cex.axis = 2, las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(height.rpf$height)), amount = 0.1), height.rpf$height, 
+       pch = 21, bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add mean  
+points(1, mean(height.con$height), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(height.rpf$height), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+
+box(lwd = 2)
+
+# Y-axis label # 
+mtext(expression('shoot height'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("15", "30", "45"), at = c(15, 30, 45))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(15, 30, 45), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add confidence intervals
+arrows(x0 = c(2,1), y0 = height.table$mean, y1 = height.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(2,1), y0 = height.table$mean, y1 = height.table$UCI, angle = 90,
+       length = 0.15, lwd = 2)
+
+# Panel label
+text(0.65, 45, labels = "B", col = "black", cex = 2)
+
+# p-value label 
+mtext(text = expression(italic("P")~" = 0.286") , side = 3, line = -1.2, 
+      adj = 0.925, col="black", cex = 0.8)
+
+
+# Panel 3: seed number
+seed.fig <- plot(jitter(rep(1, length(seed.con$seed.count)), amount = 0.1), 
+      seed.con$seed.count, ylim = c(0, 125), xlim = c(0.5, 2.5), pch = 21, 
+      col = "lightgrey", bg = "lightgrey", lwd = 3.5, cex = 1.7, yaxt = "n", 
+      xaxt = "n", cex.lab = 2, cex.axis = 2, las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(height.rpf$seed.count)), amount = 0.1), seed.rpf$seed.count, 
+       pch = 21, bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add mean  
+points(1, mean(seed.con$seed.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(seed.rpf$seed.count), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+
+box(lwd = 2)
+
+# Y-axis label # 
+mtext(expression('seed production'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("0", "25", "50", "75", "100", "125"), at = c(0, 25, 50, 75, 100, 125))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(25, 50, 75, 100, 125), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add confidence intervals
+arrows(x0 = c(2,1), y0 = seed.table$mean, y1 = seed.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(2,1), y0 = seed.table$mean, y1 = seed.table$UCI, angle = 90,
+       length = 0.15, lwd = 2)
+
+# Panel label
+text(0.65, 115, labels = "C", col = "black", cex = 2)
+
+# p-value label 
+mtext(text = expression(italic("P")~" = 0.421") , side = 3, line = -1.2, 
+      adj = 0.925, col="black", cex = 0.8)
+
+
+
+# Panel 4: SLA
+sla.fig <- plot(jitter(rep(1, length(sla.con$SLA)), amount = 0.1), 
+      sla.con$SLA, ylim = c(50, 600), xlim = c(0.5, 2.5), pch = 21, 
+      col = "lightgrey", bg = "lightgrey", lwd = 3.5, cex = 1.7, yaxt = "n", 
+      xaxt = "n", cex.lab = 2, cex.axis = 2, las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(sla.rpf$SLA)), amount = 0.1), sla.rpf$SLA, 
+       pch = 21, bg = "lightgrey", col = "lightgrey", lwd = 2, cex = 1.7)
+
+# Add mean  
+points(1, mean(sla.con$SLA), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+points(2, mean(sla.rpf$SLA), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)
+
+box(lwd = 2)
+
+# Y-axis label # 
+mtext(expression('specific leaf area'), side = 2,
+      outer = FALSE, cex = 1.25, line = 2.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("100", "200", "300", "400", "500", "600"), at = c(100, 200, 300, 400, 500, 600))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at=c(100, 200, 300, 400, 500, 600), labels = F, tck = -0.05)
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("-Rpf", "+Rpf"), at = c(1, 2))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.05)
+
+# Add confidence intervals
+arrows(x0 = c(2,1), y0 = sla.table$mean, y1 = sla.table$LCI, angle = 90,
+       length = 0.15, lwd = 2)
+arrows(x0 = c(2,1), y0 = sla.table$mean, y1 = sla.table$UCI, angle = 90,
+       length = 0.15, lwd = 2)
+
+# Panel label
+text(0.65, 560, labels = "D", col = "black", cex = 2)
+
+# p-value label 
+mtext(text = expression(italic("P")~" = 0.442") , side = 3, line = -1.2, 
+      adj = 0.925, col="black", cex = 0.8)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/FigS2.PlantTraits.png")
+grid.raster(img)
+```
+
+
+# Arabidopsis experiment
+
+
+```{r}
+# Read text file 
+seedling <- read.delim("~/GitHub/BrassicaRpf/data/seedlingbiomass.txt", sep = ",", head = TRUE)
+
+# Calculate relative biomass # 
+seedling$Biomass <- (seedling$BiomassPixel)/(seedling$PlatePixel)
+seedling$RelativeBiomass <- (seedling$Biomass)/(seedling$Seedlings)*100
+
+# Biomass data points 
+seedling.rpf <- seedling[ which(seedling$Treatment == "Rpf+"),]
+seedling.con <- seedling[ which(seedling$Treatment == "Rpf-"),]
+
+# Biomass data table 
+seedling.mean <- aggregate(seedling$RelativeBiomass ~ Treatment, seedling, mean)
+seedling.sem <- aggregate(seedling$RelativeBiomass ~ Treatment, seedling, sem)
+seedling.sem.LL <- seedling.mean[2] + seedling.sem[2]
+seedling.sem.UL <- seedling.mean[2] - seedling.sem[2]
+seedling.table <- data.frame(seedling.mean[1], seedling.mean[2], seedling.sem[2],
+          seedling.sem.LL[1], seedling.sem.UL[1])
+colnames(seedling.table) <- c("Treatment", "mean", "sem", "LCI", "UCI")
+seedling.table <- seedling.table[order(seedling.table$mean),]
+
+# Plotting Arabidopsis biomass 
+png(filename="../figures/FigS3.Arabidopsis.png", width = 800, height = 800, res = 96*2)
+
+par(mar = c(5, 5, 1, 1))
+
+arabid.fig <- plot(jitter(rep(1, length(seedling.con$RelativeBiomass)), 
+      amount = 0.1), seedling.con$RelativeBiomass, ylim = c(0, 1), 
+      xlim = c(0.5, 2.5), pch = 21, col = "lightgrey", bg = "lightgrey", lwd = 3.5,
+      cex = 1.7, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 2,
+      las = 1, ylab = "", xlab = "")
+      box(lwd = 2)
+      
+points(jitter(rep(2, length(seedling.rpf$RelativeBiomass)), amount = 0.1), 
+       seedling.rpf$RelativeBiomass, pch = 21, bg = "lightgrey", col = "lightgrey", 
+       lwd = 2, cex = 1.7)
+
+# Adding mean data point for each treatment # 
+points(1, mean(seedling.con$RelativeBiomass), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5) 
+points(2, mean(seedling.rpf$RelativeBiomass), pch = 21, col = "black", 
+       bg = "NA", lwd = 2, cex = 2.5)  
+
+box(lwd = 2)
+
+# Y axis labels
+mtext(expression('Relative Biomass'), side = 2,
+      outer = FALSE, cex = 1.5, line = 3.5, adj = 0.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1, las = 1, 
+     labels = c("0.0", "0.5", "1.0"), 
+     at = c(0.0, 0.5, 1.0))
+
+axis(side = 4, lwd.ticks = 2, cex.axis = 1, las = 1,
+     at=c(0.0, 0.5, 1.0), labels = F, tck = -0.02)
+
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.25, las = 1,
+     labels = c("Rpf-", "Rpf+"), at = c(1, 2))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     at = c(1, 2), labels = F, tck = -0.02)
+
+# Adding confidence intervals 
+arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$LCI, angle = 90,
+       length = 0.25, lwd = 2)
+arrows(x0 = c(2,1), y0 = seedling.table$mean, y1 = seedling.table$UCI, angle = 90,
+       length = 0.25, lwd = 2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/FigS3.Arabidopsis.png")
+grid.raster(img)
+
+
+# Statistical test: t-test of Rpf effects on plant biomass
+anova <- aov(seedling$RelativeBiomass ~ seedling$Treatment, data = seedling)
+summary(anova) 
+TukeyHSD(anova) 
+# Results: Rpf did not significantly affect relative biomass (p=0.321, F=1.214, DF=1,5)
+```
+
